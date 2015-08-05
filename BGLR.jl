@@ -1,10 +1,4 @@
 
-## To-do list
-# Implement missing values **
-# Implement methods predict()  effects() variances()
-# summary()
-##
-
 streamOrASCIIString=Union(ASCIIString,IOStream)
 
 ## Linear Term: INTercept
