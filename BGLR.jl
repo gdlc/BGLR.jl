@@ -94,7 +94,50 @@ function GP(;K="null",EVD="null",R2=-Inf,df0= -Inf,S0=-Inf,minEigValue=1e-7,name
 end
 #Example: tmp=GP(K=eye(3))
 
+
+## Linear Term: RandReg
+type RandReg
+  name::ASCIIString
+  n::Int64 # number or individuals
+  p::Int64 # number of vectors
+  X::Array{Float64,2} # incidence matrix
+  effects::Array{Float64,1} # effects of eigen-vectors (b)
+  var::Array{Float64,1} # variance of effects
+  d::Array{Bool,1} # is the marker in the model?
+  x2::Array{Float64,1} # sum of squares of columsn of X
+  eta::Array{Float64,1} # linear predictor: X*b
+  probIn::Float64 # average prob of marker being in the model
+  scaleCol::Bool # scale columns?
+  centerCol::Bool # center columns?
+  R2::Float64 # R-squared of the term (used to set hyperparameters)
+  
+  df0::Float64 #prior degree of freedom
+  S0::Float64  #prior scale
+  countsIn::Float64 # hyper-parameters of the beta prior
+  countsOut::Float64
+  df::Float64  #degree of freedom of the conditional distribution
+
+  post_effects::Array{Float64,1}
+  post_effects2::Array{Float64,1}
+  post_eta::Array{Float64,1}
+  post_eta2::Array{Float64,1}
+  
+  post_d::Array{Float64,1}
+  post_d2::Array{Float64,1}
+ 
+  post_probIn::Float64
+  post_probIn2::Float64
+  post_var::Array{Float64,1}
+  post_var2::Array{Float64,1}
+end
 ##
+
+#function BayesB
+# function BayesA
+# function BRR
+# function BayesDP
+# function BRR_groups
+# function BL
 type BGLR
   y::Array{Float64}
   yStar::Array{Float64}
