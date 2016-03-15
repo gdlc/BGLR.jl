@@ -18,8 +18,17 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 #### Installing BGLR-Julia
 
 ```Julia
-Pkg.add('BGLR..')
+Pkg.clone('https://github.com/gdlc/BGLR-Julia/tree/master/BGLR')
 ```
+
+#### Mickey Mouse example
+```Julia
+Pkg.clone('https://github.com/gdlc/BGLR-Julia/tree/master/BGLR')
+uisng BGLR
+
+
+```
+
 #### Examples
   * [Genomic BLUP using BLGR-Julia]()
   * [Parametric Shrinkage and Variable Selection]()
