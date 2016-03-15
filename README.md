@@ -11,7 +11,9 @@ Funding of BGLR-R and BGLR-Julia was provided by NIH (R01 GM101219).
 Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (perpdgo@gmail.com)
 
 **[BGLR-R CRAN](https://cran.r-project.org/web/packages/BGLR/index.html)**
+
 **[BGLR-R GitHub](https://github.com/gdlc/BGLR-R)**
+
 **[BGLR-R Publication](http://www.genetics.org/content/early/2014/07/06/genetics.114.164442)**
 
 
