@@ -28,6 +28,7 @@ Pkg.add('BGLR..')
   * [Prediction in testing data sets]()
   * [Modeling heterogeneous error variances]()
   * [Modeling genetic by environment interactions using BGLR-J]()
+  * [BGLR-J Utils (a collection of utilitary functions)]()
 
 
 
