@@ -30,5 +30,3 @@ Pkg.add('BGLR..')
   * [Modeling genetic by environment interactions using BGLR-J]()
   * [BGLR-J Utils (a collection of utilitary functions)]()
 
-
-

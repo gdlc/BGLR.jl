@@ -37,6 +37,21 @@ function rinvGauss(nu::Float64, lambda::Float64)
         end
 end
 
+############################
+function writeln(con, x, delim)
+ n=length(x)
+ if n>1
+   for i in 1:(n-1)
+     write(con,string(x[i],delim))
+   end
+   write(con,string(x[n]))
+ else
+    write(con,string(x))
+ end
+ write(con,"\n") 
+ flush(con)
+end
+
 
 streamOrASCIIString=Union{ASCIIString,IOStream}
 
@@ -264,15 +279,9 @@ type BGLRt
   conVarE::IOStream
 end
 
-#Function to compute the sum of squares
-function sumsq(x::Vector{Float64})
-	#s=0;
-	#n=size(x)[1];
+#Function to compute the sum of squares of the entries of a vector
 
-	#for i in 1:n
-	#	s=s+x[i]^2;
-	#end
-	#return(s);
+function sumsq(x::Vector{Float64});
 	return(sum(x.^2))
 end
 
@@ -506,7 +515,7 @@ function updateInt(fm::BGLRt,label::ASCIIString,updateMeans::Bool,saveSamples::B
 
    	if(saveSamples) 
 
-   		#writeln(fm.ETA[label].con,fm.ETA[label].mu,"") 
+   		writeln(fm.ETA[label].con,fm.ETA[label].mu,"") 
    		if(updateMeans)
    			fm.ETA[label].post_mu=fm.ETA[label].post_mu*k+fm.ETA[label].mu/nSums
    			fm.ETA[label].post_mu2=fm.ETA[label].post_mu2*k+(fm.ETA[label].mu^2)/nSums
@@ -533,7 +542,7 @@ function updateGP(fm::BGLRt,label::ASCIIString,updateMeans::Bool,saveSamples::Bo
 	fm.ETA[label].var=SS/rand(Chisq(fm.ETA[label].df),1)[]	
     
     	if(saveSamples)
-	    #writeln(fm.ETA[label].con,fm.ETA[label].var,"") 
+	    writeln(fm.ETA[label].con,fm.ETA[label].var,"") 
 	    
 	    if(updateMeans)
    			fm.ETA[label].post_effects=fm.ETA[label].post_effects*k+fm.ETA[label].effects/nSums
@@ -570,7 +579,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 	
 	
 	if(saveSamples)
-            #writeln(fm.ETA[label].con,fm.ETA[label].var,"")
+            writeln(fm.ETA[label].con,fm.ETA[label].var,"")
 
             if(updateMeans)
                         fm.ETA[label].post_effects=fm.ETA[label].post_effects*k+fm.ETA[label].effects/nSums
