@@ -77,18 +77,19 @@ end
 =#
 
 function sample_beta(n::Int64, p::Int64, X::Array{Float64,2},x2::Array{Float64,1},
-		     b::Array{Float64,1},e::Array{Float64,1},varBj::Array{Float64,1},
+		     b::Array{Float64,1},error::Array{Float64,1},varBj::Array{Float64,1},
 		     varE::Float64;minAbsBeta=1e-9)
 
-	#for j in 1:p
-        #        bj=b[j]
-        #        rhs=dot(X[:,j],e)/varE
-        #        rhs+=x2[j]*b/fm.varE
-        #        c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
-        #        fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1));
-        #        b=b-fm.ETA[label].effects[j]
-        #        axpy!(b,fm.ETA[label].X[:,j],fm.error)
-        #end 
+	for j in 1:p
+                bj=b[j]
+                rhs=dot(X[:,j],error)/varE
+                rhs+=x2[j]*b/fm.varE
+                c=x2[j]/varE + 1.0/varBj
+                b[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1))
+                bj=bj-b[j]
+                axpy!(bj,X[:,j],error)
+        end 
+
 end
 
 ############################
@@ -257,6 +258,7 @@ type RandRegBRR # Bayesian Ridge Regression
   X::Array{Float64,2} # incidence matrix
   x2::Array{Float64,1} # sum of squares of columns of X
   effects::Array{Float64,1} # b
+  eta::Array{Float64,1} # V*b
   R2::Float64
   df0::Float64 #prior degree of freedom
   S0::Float64  #prior scale
@@ -306,7 +308,7 @@ function BRR(X::Array{Float64,2};R2=0.5,df0= 5,S0=0.015,name="")
 		MSx=sum(x2)/n-sumMeanXSq
 	end
 
-	return RandRegBRR(name,n,p,X,x2,zeros(p),R2,df0,S0,df0+p,0.0,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+	return RandRegBRR(name,n,p,X,x2,zeros(p),zeros(n),R2,df0,S0,df0+p,0.0,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
 
 end
 
@@ -628,24 +630,48 @@ function updateGP(fm::BGLRt,label::ASCIIString,updateMeans::Bool,saveSamples::Bo
 	return fm
 end
 
+function innersimd(x, y)
+    s = zero(eltype(x))
+    @simd for i=1:length(x)
+        @inbounds s += x[i]*y[i]
+    end
+    s
+end
+
+function my_axpy(a,x,y)
+    @simd for i=1:length(x)
+	@inbounds y[i]=a*x[i]+y[i]	
+    end
+end
+
 #Update RandRegBRR
 function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
 	
 	p=fm.ETA[label].p
+	n=fm.ETA[label].n
 	
-	#Sample beta
-	#Just the same function in BGLR-R rewritten
+	#Sample beta, julia native code
+	#Just the same function in BGLR-R rewritten	
+
 	for j in 1:p
 		b=fm.ETA[label].effects[j]
 		xj=fm.ETA[label].X[:,j]
-		rhs=dot(xj,fm.error)/fm.varE
+		#rhs=dot(xj,fm.error)/fm.varE
+		rhs=innersimd(xj,fm.error)/fm.varE
 		rhs+=fm.ETA[label].x2[j]*b/fm.varE
 		c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
 		fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1));
 		b=b-fm.ETA[label].effects[j]
-		axpy!(b,xj,fm.error)
+		#axpy!(b,xj,fm.error)
+		my_axpy(b,xj,fm.error)
 	end
 
+	#Calling a function in C
+
+	#ccall((:sample_beta,"/Users/paulino/Documents/Documentos Paulino/Estancia USA-Michigan/julia/sample_betas_julia.so"),
+      	#	Void,(Int32, Int32, Ptr{Float64},Ptr{Float64},Ptr{Float64},Ptr{Float64},Float64,Float64,Float64),
+      	#	Int32(n),Int32(p),fm.ETA[label].X,fm.ETA[label].x2,fm.ETA[label].effects,fm.error,fm.ETA[label].var,fm.varE,Float64(1e-7)
+      	#     )
 
 	SS=sumsq(fm.ETA[label].effects)+fm.ETA[label].S0
 	fm.ETA[label].var=SS/rand(Chisq(fm.ETA[label].df),1)[]
@@ -659,8 +685,8 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
                         fm.ETA[label].post_effects2=fm.ETA[label].post_effects2*k+(fm.ETA[label].effects.^2)/nSums
 
 			#Do we need eta?
-                        #fm.ETA[label].post_eta =fm.ETA[label].post_eta*k+fm.ETA[label].eta/nSums
-                        #fm.ETA[label].post_eta2=fm.ETA[label].post_eta2*k+(fm.ETA[label].eta.^2)/nSums
+                        fm.ETA[label].post_eta =fm.ETA[label].post_eta*k+fm.ETA[label].eta/nSums
+                        fm.ETA[label].post_eta2=fm.ETA[label].post_eta2*k+(fm.ETA[label].eta.^2)/nSums
 
                         fm.ETA[label].post_var=fm.ETA[label].post_var*k+fm.ETA[label].var/nSums
                         fm.ETA[label].post_var2=fm.ETA[label].post_var2*k+(fm.ETA[label].var^2)/nSums
