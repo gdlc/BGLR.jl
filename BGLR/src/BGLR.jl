@@ -1,6 +1,5 @@
-#FIXME: 
-#1) writeln not working
-#2) sumsq not optimal, this is just a patch		
+#Define the module BGLR
+#Last update March/15/2016
 
 module BGLR
 
@@ -14,6 +13,7 @@ import
 	Distributions.Chisq,
         Distributions.Gamma,
 	Base.LinAlg.BLAS.axpy!
+	
 
 
 #This routine was adapted from rinvGauss function from S-Plus
@@ -35,6 +35,60 @@ function rinvGauss(nu::Float64, lambda::Float64)
         else
                 return(r2)
         end
+end
+
+
+#=
+ * This is a generic function to sample betas in various models, including 
+ * Bayesian LASSO, BayesA, Bayesian Ridge Regression, etc.
+ 
+ * For example, in the Bayesian LASSO, we wish to draw samples from the full 
+ * conditional distribution of each of the elements in the vector bL. The full conditional 
+ * distribution is normal with mean and variance equal to the solution (inverse of the coefficient of the left hand side)
+ * of the following equation (See suplementary materials in de los Campos et al., 2009 for details),
+   
+    (1/varE x_j' x_j + 1/(varE tau_j^2)) bL_j = 1/varE x_j' e
+ 
+    or equivalently, 
+    
+    mean= (1/varE x_j' e)/ (1/varE x_j' x_j + 1/(varE tau_j^2))
+    variance= 1/ (1/varE x_j' x_j + 1/(varE tau_j^2))
+    
+    xj= the jth column of the incidence matrix
+    
+ *The notation in the routine is as follows:
+ 
+ n: Number of rows in X
+ pL: Number of columns in X
+ XL: the matrix X stacked by columns
+ XL2: vector with x_j' x_j, j=1,...,p
+ bL: vector of regression coefficients
+ e: vector with residuals, e=y-yHat, yHat= predicted values
+ varBj: vector with variances, 
+	For Bayesian LASSO, varBj=tau_j^2 * varE, j=1,...,p
+	For Ridge regression, varBj=varB, j=1,...,p, varB is the variance common to all betas.
+	For BayesA, varBj=varB_j, j=1,...,p
+	For BayesCpi, varBj=varB, j=1,...,p, varB is the variance common to all betas
+	
+ varE: residual variance
+ minAbsBeta: in some cases values of betas near to zero can lead to numerical problems in BL, 
+             so, instead of using this tiny number we assingn them minAbsBeta
+ 
+=#
+
+function sample_beta(n::Int64, p::Int64, X::Array{Float64,2},x2::Array{Float64,1},
+		     b::Array{Float64,1},e::Array{Float64,1},varBj::Array{Float64,1},
+		     varE::Float64;minAbsBeta=1e-9)
+
+	#for j in 1:p
+        #        bj=b[j]
+        #        rhs=dot(X[:,j],e)/varE
+        #        rhs+=x2[j]*b/fm.varE
+        #        c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
+        #        fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1));
+        #        b=b-fm.ETA[label].effects[j]
+        #        axpy!(b,fm.ETA[label].X[:,j],fm.error)
+        #end 
 end
 
 ############################
@@ -203,7 +257,6 @@ type RandRegBRR # Bayesian Ridge Regression
   X::Array{Float64,2} # incidence matrix
   x2::Array{Float64,1} # sum of squares of columns of X
   effects::Array{Float64,1} # b
-  eta::Array{Float64,1} # X*b
   R2::Float64
   df0::Float64 #prior degree of freedom
   S0::Float64  #prior scale
@@ -227,6 +280,7 @@ end
 
 #Function to setup RandReg
 #When the prior for the coefficients is BRR
+#FIXME: Set the S0
 
 function BRR(X::Array{Float64,2};R2=0.5,df0= 5,S0=0.015,name="")
 
@@ -239,7 +293,20 @@ function BRR(X::Array{Float64,2};R2=0.5,df0= 5,S0=0.015,name="")
     		x2[j]=sum(X[:,j].^2);
     	end
 
-	return RandRegBRR(name,n,p,X,x2,zeros(p),zeros(n),R2,df0,S0,df0+p,0.0,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+	#sumMaeanXSq 
+	sumMeanXSq=0.0
+	for j in 1:p
+		sumMeanXSq+=(mean(X[:,j]))^2
+	end
+
+	#FIXME: In the R version we need y in order to compute the 
+	#Default scale parameter
+
+	if(S0<0)
+		MSx=sum(x2)/n-sumMeanXSq
+	end
+
+	return RandRegBRR(name,n,p,X,x2,zeros(p),R2,df0,S0,df0+p,0.0,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
 
 end
 
@@ -430,7 +497,7 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 			end
 
 			if(typeof(ETA[2])==RandRegBRR)
-				#fm=updateRandRegBRR(fm,ETA[1],fm.updateMeans,fm.saveSamples,nSums,k)
+				fm=updateRandRegBRR(fm,ETA[1],fm.updateMeans,fm.saveSamples,nSums,k)
 			end	
   		end
 
@@ -542,6 +609,7 @@ function updateGP(fm::BGLRt,label::ASCIIString,updateMeans::Bool,saveSamples::Bo
 	fm.ETA[label].var=SS/rand(Chisq(fm.ETA[label].df),1)[]	
     
     	if(saveSamples)
+
 	    writeln(fm.ETA[label].con,fm.ETA[label].var,"") 
 	    
 	    if(updateMeans)
@@ -563,17 +631,22 @@ end
 #Update RandRegBRR
 function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
 	
-	axpy!(1,fm.ETA[label].eta ,fm.error)# updating errors
-	rhs=fm.ETA[label].X'fm.error
-	lambda=fm.varE/fm.ETA[label].var
-	lhs=fm.ETA[label].x2+lambda
-	CInv=1./lhs
-	sol=CInv.*rhs
-	SD=sqrt(CInv)
-	fm.ETA[label].effects=sol+rand(Normal(0,sqrt(fm.varE)),fm.ETA[label].p).*SD
-	fm.ETA[label].eta=fm.ETA[label].X*fm.ETA[label].effects
-	axpy!(-1,fm.ETA[label].eta ,fm.error)# updating errors
-	     
+	p=fm.ETA[label].p
+	
+	#Sample beta
+	#Just the same function in BGLR-R rewritten
+	for j in 1:p
+		b=fm.ETA[label].effects[j]
+		xj=fm.ETA[label].X[:,j]
+		rhs=dot(xj,fm.error)/fm.varE
+		rhs+=fm.ETA[label].x2[j]*b/fm.varE
+		c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
+		fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1));
+		b=b-fm.ETA[label].effects[j]
+		axpy!(b,xj,fm.error)
+	end
+
+
 	SS=sumsq(fm.ETA[label].effects)+fm.ETA[label].S0
 	fm.ETA[label].var=SS/rand(Chisq(fm.ETA[label].df),1)[]
 	
@@ -585,15 +658,15 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
                         fm.ETA[label].post_effects=fm.ETA[label].post_effects*k+fm.ETA[label].effects/nSums
                         fm.ETA[label].post_effects2=fm.ETA[label].post_effects2*k+(fm.ETA[label].effects.^2)/nSums
 
-                        fm.ETA[label].post_eta =fm.ETA[label].post_eta*k+fm.ETA[label].eta/nSums
-                        fm.ETA[label].post_eta2=fm.ETA[label].post_eta2*k+(fm.ETA[label].eta.^2)/nSums
+			#Do we need eta?
+                        #fm.ETA[label].post_eta =fm.ETA[label].post_eta*k+fm.ETA[label].eta/nSums
+                        #fm.ETA[label].post_eta2=fm.ETA[label].post_eta2*k+(fm.ETA[label].eta.^2)/nSums
 
                         fm.ETA[label].post_var=fm.ETA[label].post_var*k+fm.ETA[label].var/nSums
                         fm.ETA[label].post_var2=fm.ETA[label].post_var2*k+(fm.ETA[label].var^2)/nSums
 
             end
         end
-
 	return fm
 end
 
