@@ -12,7 +12,9 @@ import
 	Distributions.Normal,
 	Distributions.Chisq,
         Distributions.Gamma,
-	Base.LinAlg.BLAS.axpy!
+	Base.LinAlg.BLAS.axpy!,
+	ArrayViews.unsafe_view
+
 	
 
 
@@ -256,6 +258,7 @@ type RandRegBRR # Bayesian Ridge Regression
   n::Int64 # number or individuals
   p::Int64 # number of vectors
   X::Array{Float64,2} # incidence matrix
+  vecX::Array{Float64,1} # incidence matrix in vector format
   x2::Array{Float64,1} # sum of squares of columns of X
   effects::Array{Float64,1} # b
   eta::Array{Float64,1} # V*b
@@ -308,7 +311,7 @@ function BRR(X::Array{Float64,2};R2=0.5,df0= 5,S0=0.015,name="")
 		MSx=sum(x2)/n-sumMeanXSq
 	end
 
-	return RandRegBRR(name,n,p,X,x2,zeros(p),zeros(n),R2,df0,S0,df0+p,0.0,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+	return RandRegBRR(name,n,p,X,vec(X),x2,zeros(p),zeros(n),R2,df0,S0,df0+p,0.0,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
 
 end
 
@@ -638,11 +641,13 @@ function innersimd(x, y)
     s
 end
 
+
 function my_axpy(a,x,y)
     @simd for i=1:length(x)
 	@inbounds y[i]=a*x[i]+y[i]	
     end
 end
+
 
 #Update RandRegBRR
 function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
@@ -653,29 +658,79 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 	#Sample beta, julia native code
 	#Just the same function in BGLR-R rewritten	
 
+	#Naive implementation 1, wheat example: ~25 secs/1500 Iter
+        
+        #=
 	for j in 1:p
 		b=fm.ETA[label].effects[j]
-		xj=fm.ETA[label].X[:,j]
-		#rhs=dot(xj,fm.error)/fm.varE
-		rhs=innersimd(xj,fm.error)/fm.varE
+	 	xj=fm.ETA[label].X[:,j]
+		rhs=dot(xj,fm.error)/fm.varE
 		rhs+=fm.ETA[label].x2[j]*b/fm.varE
 		c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
 		fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1));
 		b=b-fm.ETA[label].effects[j]
-		#axpy!(b,xj,fm.error)
-		my_axpy(b,xj,fm.error)
+		axpy!(b,xj,fm.error)
 	end
+        =#
 
-	#Calling a function in C
+	#Implementation 2, using @inbounds and @simd, wheat example: ~11 secs/1500 Iter
 
-	#ccall((:sample_beta,"/Users/paulino/Documents/Documentos Paulino/Estancia USA-Michigan/julia/sample_betas_julia.so"),
-      	#	Void,(Int32, Int32, Ptr{Float64},Ptr{Float64},Ptr{Float64},Ptr{Float64},Float64,Float64,Float64),
-      	#	Int32(n),Int32(p),fm.ETA[label].X,fm.ETA[label].x2,fm.ETA[label].effects,fm.error,fm.ETA[label].var,fm.varE,Float64(1e-7)
-      	#     )
+	#=	
+	for j in 1:p
+               b=fm.ETA[label].effects[j]
+               xj=fm.ETA[label].X[:,j]
+               rhs=innersimd(xj,fm.error)/fm.varE
+               rhs+=fm.ETA[label].x2[j]*b/fm.varE
+               c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
+               fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1));
+               b=b-fm.ETA[label].effects[j]
+               my_axpy(b,xj,fm.error)
+        end
+        =#
+
+	#Implementation 3, using unsafe_view, @inbounds and @simd, wheat example: ~6 secs/1500 Iter
+
+	for j in 1:p
+               b=fm.ETA[label].effects[j]
+               xj=unsafe_view(fm.ETA[label].X, :, j:j)
+               rhs=innersimd(xj,fm.error)/fm.varE
+               rhs+=fm.ETA[label].x2[j]*b/fm.varE
+               c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
+               fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1));
+               b=b-fm.ETA[label].effects[j]
+               my_axpy(b,xj,fm.error)
+        end
+
+	#Implementation 4, using pointers, Base.LinAlg.BLAS.dot, Base.LinAlg.BLAS.axpy! wheat example: ~18 secs/1500 Iter
+
+	#=	
+	pX=pointer(fm.ETA[label].X)
+        pe=pointer(fm.error)
+
+	for j in 1:p
+               b=fm.ETA[label].effects[j]
+	       address=pX+n*(j-1)*sizeof(Float64)
+	       rhs=Base.LinAlg.BLAS.dot(n,address,1,pe,1)/fm.varE
+               rhs+=fm.ETA[label].x2[j]*b/fm.varE
+               c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
+               fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1));
+               b=b-fm.ETA[label].effects[j]
+	       Base.LinAlg.BLAS.axpy!(n,b,address,1,pe,1);	
+        end
+	=#
+
+	#Implementation 5, Calling C
+
+	#=
+	ccall((:sample_beta,"/Users/paulino/Documents/Documentos Paulino/Estancia USA-Michigan/julia/sample_betas_julia.so"),
+      		Void,(Int32, Int32, Ptr{Float64},Ptr{Float64},Ptr{Float64},Ptr{Float64},Float64,Float64,Float64),
+      		Int32(n),Int32(p),fm.ETA[label].X,fm.ETA[label].x2,fm.ETA[label].effects,fm.error,fm.ETA[label].var,fm.varE,Float64(1e-7)
+      	     )
+
+	=#
 
 	SS=sumsq(fm.ETA[label].effects)+fm.ETA[label].S0
 	fm.ETA[label].var=SS/rand(Chisq(fm.ETA[label].df),1)[]
-	
 	
 	if(saveSamples)
             writeln(fm.ETA[label].con,fm.ETA[label].var,"")
