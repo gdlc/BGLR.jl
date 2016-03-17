@@ -6,7 +6,8 @@ module BGLR
 export
 	bglr,
 	RKHS,
-	BRR
+	BRR,
+	FixEff
 
 import
 	Distributions.Normal,
@@ -208,38 +209,6 @@ end
 #End INTercept
 ###################################################################################################################
 
-
-###################################################################################################################
-#Begin FixEff
-###################################################################################################################
-
-## Linear Term: Fixed Effects
-type FixEff
-  name::ASCIIString
-  X::Array{Float64}
-  p::Int64
-  effects::Array{Float64}
-  post_effects::Array{Float64}
-  post_effects2::Array{Float64}
-  post_SD_effects::Array{Float64}
-  fname::ASCIIString
-  con::streamOrASCIIString
-  nSums::Int64
-  k::Float64
-end
-
-function  FixEff(X::Array{Float64};name="fix")
-   n,p=size(X)
-   return FixEff(name,X,p,zeros(p),zeros(p),zeros(p),zeros(p),"","",0,0)
-end
-
-#Example: FixEff(rand(4,3))
-
-###################################################################################################################
-#EndFixEff
-###################################################################################################################
-
-
 ###################################################################################################################
 #Begin RKHS
 ###################################################################################################################
@@ -301,7 +270,7 @@ end
 #The Chi square distribution we need to know the value of var(y), but
 #it will be very weird and inconsistent if we pass it as a parameter to RKHS function
 
-function RKHS_sanity_checks(LT::RKHS, Vy::Float64, nLT::Int64, R2::Float64)
+function RKHS_post_init(LT::RKHS, Vy::Float64, nLT::Int64, R2::Float64)
 
 	 # Setting default values
          if(LT.df0<0)
@@ -377,12 +346,13 @@ type RandRegBRR # Bayesian Ridge Regression
   X::Array{Float64,2} # incidence matrix
   x2::Array{Float64,1} # sum of squares of columns of X
   effects::Array{Float64,1} # b
-  eta::Array{Float64,1} # V*b
+  eta::Array{Float64,1} # X*b
   R2::Float64
   df0::Float64 #prior degree of freedom
   S0::Float64  #prior scale
   df::Float64  #degree of freedom of the conditional distribution
   var::Float64 # variance of effects
+  update_var::Bool #Update the variance?, This is useful for FixedEffects
   post_var::Float64 # posterior mean
   post_var2::Float64 # posterior mean of the squared of the variance
   post_SD_var::Float64 # posterior standard deviation
@@ -406,10 +376,10 @@ function BRR(X::Array{Float64,2};R2=-Inf,df0=-Inf,S0=-Inf,name="")
 
 	n,p=size(X);  #sample size and number of predictors
 
-	return RandRegBRR(name,n,p,X,zeros(p),zeros(p),zeros(n),R2,df0,S0,df0+p,0.0,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+	return RandRegBRR(name,n,p,X,zeros(p),zeros(p),zeros(n),R2,df0,S0,df0+p,0.0,true,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
 end
 
-function BRR_sanity_checks(LT::RandRegBRR, Vy::Float64, nLT::Int64, R2::Float64)
+function BRR_post_init(LT::RandRegBRR, Vy::Float64, nLT::Int64, R2::Float64)
 
 	#The sum of squares of columns of X
 	for j in 1:LT.p
@@ -537,8 +507,12 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 
 	=#
 
-	SS=sumsq(fm.ETA[label].effects)+fm.ETA[label].S0
-	fm.ETA[label].var=SS/rand(Chisq(fm.ETA[label].df),1)[]
+	#Update the variance?, it will be true for BRR, but not for FixedEffects
+	if(fm.ETA[label].update_var==true)
+	
+		SS=sumsq(fm.ETA[label].effects)+fm.ETA[label].S0
+		fm.ETA[label].var=SS/rand(Chisq(fm.ETA[label].df),1)[]
+	end
 	
 	if(saveSamples)
             writeln(fm.ETA[label].con,fm.ETA[label].var,"")
@@ -564,6 +538,35 @@ end
 ###################################################################################################################
 #End BRR
 ###################################################################################################################
+
+###################################################################################################################
+#Begin FixEff
+###################################################################################################################
+
+function  FixEff(X::Array{Float64};name="fix")
+   n,p=size(X)
+   return RandRegBRR(name,n,p,X,zeros(p),zeros(p),zeros(n),-Inf,-Inf,-Inf,-Inf,0.0,false,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+end
+
+#Example: FixEff(rand(4,3))
+
+function FixEff_post_init(LT::RandRegBRR)
+	
+	#The sum of squares of columns of X
+        for j in 1:LT.p
+                LT.x2[j]=sum(LT.X[:,j].^2);
+        end
+	
+	LT.var=1e10	
+	LT.update_var=false
+end
+
+
+###################################################################################################################
+#EndFixEff
+###################################################################################################################
+
+
 
 ## Linear Term: RandReg
 type RandReg
@@ -646,18 +649,19 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
         	if(typeof(term[2])==RKHS)
 
             	   	LP[term[1]]=term[2]
-			RKHS_sanity_checks(term[2],Vy,length(ETA),R2)
+			RKHS_post_init(term[2],Vy,length(ETA),R2)
                	   
 	        end #end of if for RKHS
 
-		if(typeof(term[2])==RandRegBRR)
+		#Ridge Regression
+		if(typeof(term[2])==RandRegBRR && term[2].update_var==true)
 
 			LP[term[1]]=term[2]
-			BRR_sanity_checks(term[2],Vy,length(ETA),R2)
+			BRR_post_init(term[2],Vy,length(ETA),R2)
 		end
-
-		if(typeof(term[2])==FixEff)
-                        #Add your magic code here
+		
+		if(typeof(term[2])==RandRegBRR && term[2].update_var==false)
+                        FixEff_post_init(term[2])
                 end #end of if for Fixff
 
               else 
