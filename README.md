@@ -55,7 +55,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   #         In this case ETA has only one term. 
   #         RKHS(K=G) is used to define a random effect with covariance matrix G.
   
-  fm=bglr(y=y,ETA=["mrk"=>RKHS(K=G)])
+  fm=bglr( y=y, ETA=Dict("mrk"=>RKHS(K=G)) )
   
 ```
 
