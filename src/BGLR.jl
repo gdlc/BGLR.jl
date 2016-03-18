@@ -14,7 +14,8 @@ import
 	Distributions.Chisq,
         Distributions.Gamma,
 	Base.LinAlg.BLAS.axpy!,
-	ArrayViews.unsafe_view
+	ArrayViews.unsafe_view,
+	LinAlg.scale
 
 
 #This routine appends a textline to 
