@@ -114,3 +114,83 @@ for in in 1:1500
 	end
 end
 toc()
+
+
+using BGLR
+using Gadfly
+
+#Wheat data
+#Markers
+X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true);
+X=X[1];  #The first component of the Tuple
+
+#Phenotypes
+Y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true);
+Y=Y[1]; #The first component of the Tuple
+y=Y[:,1];
+
+#Relationship matrix derived from pedigree
+A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true);
+A=A[1]; #The first component of the Tuple
+
+#Sets for cross-validations
+sets=vec(readdlm(joinpath(Pkg.dir(),"BGLR/data/wheat.sets.csv")));
+
+
+#Test 1: RKHS
+
+G=X*(X')/size(X)[2];
+
+predictor1=Dict("Gmatrix"=>RKHS(K=G))
+
+fm=bglr(y=y,ETA=predictor1);
+
+plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
+
+
+#Test 2
+#Bayesian Ridge Regression
+predictor2=Dict("XMatrix"=>BRR(X))
+
+#@elapsed bglr(y=y,ETA=predictor2)
+
+fm=bglr(y=y,ETA=predictor2);
+
+plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
+     
+#Test 3
+XFixed=X[:,1:50];
+predictor3=Dict("XFixed"=>FixEff(XFixed))
+fm=bglr(y=y,ETA=predictor3);
+
+plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
+
+
+#Test 4, two sets of predictors
+
+X1=X[:,1:50];
+X2=X[:,51:1279];
+
+predictor4=Dict("XFixed"=>FixEff(X1),
+		 "Ridge"=>BRR(X2))
+		 
+fm=bglr(y=y,ETA=predictor4);
+
+plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
+
