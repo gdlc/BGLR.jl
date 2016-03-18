@@ -44,10 +44,14 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true);[1][:,1]
   
 # Computing G-Matrix
+  n,p=size(X)
   X=scale(X)
-  G=XX'
+  G=X*X'
   G=G./p
   
+# Forming the linear predictor
+  ETA=
+# Fitting the model
   
   
 ```
