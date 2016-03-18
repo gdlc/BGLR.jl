@@ -31,6 +31,27 @@ using BGLR
 
 #### Examples
   * [Genomic BLUP using BLGR-Julia]()
+
+```
+#Wheat data
+#Markers
+X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true);
+X=X[1];  #The first component of the Tuple
+
+#Phenotypes
+Y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true);
+Y=Y[1]; #The first component of the Tuple
+y=Y[:,1];
+
+#Relationship matrix derived from pedigree
+A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true);
+A=A[1]; #The first component of the Tuple
+
+#Sets for cross-validations
+sets=vec(readdlm(joinpath(Pkg.dir(),"BGLR/data/wheat.sets.csv")));
+
+```
+
   * [Parametric Shrinkage and Variable Selection]()
   * [Integrating fixed effects, regression on markers and pedigrees]()
   * [Reproducing Kernel Hilbert Spaces Regression using BLGR-J]()
