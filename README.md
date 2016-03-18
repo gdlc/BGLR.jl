@@ -18,13 +18,13 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 #### Installing BGLR-Julia
 
 ```Julia
-Pkg.clone("https://github.com/gdlc/BGLR-Julia/tree/master/BGLR-Julia/BGLR")
+Pkg.clone("https://github.com/gdlc/BGLR.jl")
 ```
 
 #### Mickey Mouse example
 ```Julia
-Pkg.clone('https://github.com/gdlc/BGLR-Julia/tree/master/BGLR')
-uisng BGLR
+Pkg.clone("https://github.com/gdlc/BGLR.jl")
+using BGLR
 
 
 ```
