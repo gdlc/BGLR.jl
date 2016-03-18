@@ -30,7 +30,7 @@ using BGLR
 ```
 
 #### Examples
-  * [Genomic BLUP using BLGR-Julia](<div id="GBLUP" />)
+  * [Genomic BLUP using BLGR-Julia](#GBLUP)
   * [Parametric Shrinkage and Variable Selection]()
   * [Integrating fixed effects, regression on markers and pedigrees]()
   * [Reproducing Kernel Hilbert Spaces Regression using BLGR-J]()
