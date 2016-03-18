@@ -48,13 +48,14 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   X=scale(X)
   G=X*X'
   G=G./p
-  
-# Forming the linear predictor
-  ETA=["mrk"=>RKHS(K=G)]  # creates a dictionary with terms for the linear predictor
-                          # in this case, just one term, RKHS(K=G)
-  
+
 # Fitting the model
-  fm=BGLR(y=y,ETA=TMP)
+  # Readme: y is the phenotype vector, 
+  #         ETA is a dictionary used to specify terms to be used in the regression,
+  #         In this case ETA has only one term. 
+  #         RKHS(K=G) is used to define a random effect with covariance matrix G.
+  
+  fm=BGLR(y=y,ETA=["mrk"=>RKHS(K=G)])
   
 ```
 
