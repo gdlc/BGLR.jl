@@ -474,7 +474,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
                rhs=innersimd(xj,fm.error)/fm.varE
                rhs+=fm.ETA[label].x2[j]*b/fm.varE
                c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
-               fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1));
+               fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1))
                b=b-fm.ETA[label].effects[j]
                my_axpy(b,xj,fm.error)
         end
@@ -634,44 +634,43 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
    end
    
    ### Initializing the linear predictor
-   LP=Dict()
-   LP["INT"]=INT(yStar)
+   ETA=merge(ETA,Dict("INT"=>INT(yStar)))
   
    #term[2] has information related to a type
    #term[1] has information related to a key in the dictionary
      
-   if(length(ETA)>0)
-     for term in ETA
-        if(typeof(term[2])==RKHS || 
+   
+   for term in ETA
+        if(typeof(term[2])==INT ||
+	   typeof(term[2])==RKHS || 
            typeof(term[2])==FixEff ||
 	   typeof(term[2])==RandRegBRR)
-        	
+
         	if(typeof(term[2])==RKHS)
 
-            	   	LP[term[1]]=term[2]
-			RKHS_post_init(term[2],Vy,length(ETA),R2)
+			RKHS_post_init(term[2],Vy,length(ETA)-1,R2)
                	   
 	        end #end of if for RKHS
 
 		#Ridge Regression
 		if(typeof(term[2])==RandRegBRR && term[2].update_var==true)
 
-			LP[term[1]]=term[2]
-			BRR_post_init(term[2],Vy,length(ETA),R2)
+			BRR_post_init(term[2],Vy,length(ETA)-1,R2)
 		end
 		
+		#Fixed effects
 		if(typeof(term[2])==RandRegBRR && term[2].update_var==false)
+
                         FixEff_post_init(term[2])
                 end #end of if for Fixff
 
               else 
         	error("The elements of ETA must of type RKHS, FixEff or RandRegBRR")
 	      end
-     end #end for    
-   end #end if length(ETA)
+   end #end for    
 
    ## Opening connections
-   for term in LP
+   for term in ETA
    	  term[2].name=term[1]
 
    	  if(typeof(term[2])==INT)
@@ -681,16 +680,11 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
    	  if(typeof(term[2])==RKHS)
    	  	term[2].fname=string(saveAt,term[2].name,"_var.dat")
    	  end
-
-   	  if(typeof(term[2])==FixEff)
-   	  	term[2].fname=string(saveAt,term[2].name,"_b.dat")
-   	  end
 	
 	  if(typeof(term[2])==RandRegBRR)
 		#Add your magic code here
 		term[2].fname=string(saveAt,term[2].name,"_var.dat")
 	  end
-	
 
 	  term[2].con=open(term[2].fname,"w+")
    end
@@ -709,7 +703,7 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 
    fm=BGLRt(y,yStar,yHat,resid,zeros(n),zeros(n),zeros(n),
    	    naCode,hasNA,nNA,isNA,
-   	    LP,nIter,burnIn,thin,R2,verbose,
+   	    ETA,nIter,burnIn,thin,R2,verbose,
             saveAt,n,Vy*(1-R2),df0,S0,df0+n,0,0,0,false,false,open(saveAt*"varE.dat","w+"))
               
    if (nIter>0)
@@ -727,22 +721,22 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
   		end
   		
   		## Sampling effects and other parameters of the LP
-  		for ETA in fm.ETA    ## Loop over terms in the linear predictor
+  		for term in ETA    ## Loop over terms in the linear predictor
      			
-			if(typeof(ETA[2])==INT)
-       				fm=updateInt(fm,ETA[1],fm.updateMeans,fm.saveSamples,nSums,k)
+			if(typeof(term[2])==INT)
+       				fm=updateInt(fm,term[1],fm.updateMeans,fm.saveSamples,nSums,k)
        			end     		  
 
-			if(typeof(ETA[2])==RKHS)
-     		  	 	fm=updateRKHS(fm,ETA[1],fm.updateMeans,fm.saveSamples,nSums,k)
+			if(typeof(term[2])==RKHS)
+     		  	 	fm=updateRKHS(fm,term[1],fm.updateMeans,fm.saveSamples,nSums,k)
     			end
 
-			if(typeof(ETA[2])==FixEff)
+			if(typeof(term[2])==FixEff)
 				#Add your magic code here
 			end
 
-			if(typeof(ETA[2])==RandRegBRR)
-				fm=updateRandRegBRR(fm,ETA[1],fm.updateMeans,fm.saveSamples,nSums,k)
+			if(typeof(term[2])==RandRegBRR)
+				fm=updateRandRegBRR(fm,term[1],fm.updateMeans,fm.saveSamples,nSums,k)
 			end	
   		end
 
@@ -750,6 +744,11 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
   		
 		SS=sumsq(fm.error)+fm.S0
   		fm.varE= SS/rand(Chisq(fm.df),1)[]
+
+		if(fm.saveSamples)
+
+			writeln(fm.conVarE,fm.varE,"") 			
+		end
   		
   		
   		## Updating error, yHat & yStar
@@ -775,30 +774,30 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
     end # end of nIter>0
 	
     ## Closing connections
-    for term in LP
+    for term in ETA
    	   close(term[2].con)
     end
    
     ## Compute posterior SDs
    	fm.post_SD_yHat=sqrt(fm.post_yHat2-fm.post_yHat.^2)
 	
-	for ETA in fm.ETA 
-	  if(typeof(ETA[2])==INT)
-	     ETA[2].post_SD_mu=sqrt(ETA[2].post_mu2-ETA[2].post_mu^2)
+	for term in ETA 
+	  if(typeof(term[2])==INT)
+	     term[2].post_SD_mu=sqrt(term[2].post_mu2-term[2].post_mu^2)
 	  end
 
 
-	  if(typeof(ETA[2])==RKHS)
-	      ETA[2].post_SD_effects=sqrt(ETA[2].post_effects2-ETA[2].post_effects.^2)
-	      ETA[2].post_SD_eta=sqrt(ETA[2].post_eta2-ETA[2].post_eta.^2)
-	      ETA[2].post_SD_var=sqrt(ETA[2].post_var2-ETA[2].post_var^2)
+	  if(typeof(term[2])==RKHS)
+	      term[2].post_SD_effects=sqrt(term[2].post_effects2-term[2].post_effects.^2)
+	      term[2].post_SD_eta=sqrt(term[2].post_eta2-term[2].post_eta.^2)
+	      term[2].post_SD_var=sqrt(term[2].post_var2-term[2].post_var^2)
 	  end
 	  
-	  if(typeof(ETA[2])==FixEff)
+	  if(typeof(term[2])==FixEff)
 	     #Add your magic code here 	
 	  end
 
-	  if(typeof(ETA[2])==RandRegBRR)
+	  if(typeof(term[2])==RandRegBRR)
              #Add your magic code here
 	  end
   

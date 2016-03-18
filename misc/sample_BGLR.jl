@@ -37,10 +37,38 @@ plot(x=fm.y,
 TMP=Dict("XMatrix"=>BRR(X))
 
 
-@elapsed bglr(y=y,ETA=TMP)
+#@elapsed bglr(y=y,ETA=TMP)
 
 fm=bglr(y=y,ETA=TMP);
 
+
+plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
+     
+#Test 4
+XFixed=X[:,1:50];
+TMP=Dict("XFixed"=>FixEff(XFixed))
+fm=bglr(y=y,ETA=TMP);
+
+plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
+
+
+#Test 5, two sets of predictors
+
+X1=X[:,1:50];
+X2=X[:,51:1279];
+
+ETA=Dict("XFixed"=>FixEff(X1),
+		 "Ridge"=>BRR(X2))
+		 
+fm=bglr(y=y,ETA=ETA);
 
 
 plot(x=fm.y,
