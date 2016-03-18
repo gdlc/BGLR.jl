@@ -57,6 +57,10 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   
   fm=bglr( y=y, ETA=Dict("mrk"=>RKHS(K=G)) )
   
+## Retrieving estimates and predictions
+  fm.varE # posterior mean of error variance
+  fm.yHat # predictions
+  fm.ETA["mrk"].varU # variance of the random effect
 ```
 
 
