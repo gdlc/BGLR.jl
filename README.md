@@ -50,9 +50,11 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   G=G./p
   
 # Forming the linear predictor
-  ETA=
-# Fitting the model
+  ETA=["mrk"=>RKHS(K=G)]  # creates a dictionary with terms for the linear predictor
+                          # in this case, just one term, RKHS(K=G)
   
+# Fitting the model
+  fm=BGLR(y=y,ETA=TMP)
   
 ```
 
