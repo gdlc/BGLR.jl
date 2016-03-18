@@ -18,15 +18,8 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 #### Installing BGLR-Julia
 
 ```Julia
-Pkg.clone("https://github.com/gdlc/BGLR.jl")
-```
-
-#### Mickey Mouse example
-```Julia
-Pkg.clone("https://github.com/gdlc/BGLR.jl")
-using BGLR
-
-
+  Pkg.rm("BGLR")
+  Pkg.clone("https://github.com/gdlc/BGLR.jl")
 ```
 
 #### Examples
@@ -38,12 +31,12 @@ using BGLR
   * [Modeling heterogeneous error variances]()
   * [Modeling genetic by environment interactions using BGLR-J]()
   * [BGLR-J Utils (a collection of utilitary functions)]()
-  
-
 
 ### GBLUP with BGLR-julia
 <div id="GBLUP" />
-```R
+```julia
+ using BGLR
+ 
 # Reading Data 
  #Markers
   X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1]
