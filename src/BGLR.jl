@@ -15,7 +15,7 @@ import
         Distributions.Gamma,
 	Base.LinAlg.BLAS.axpy!,
 	ArrayViews.unsafe_view,
-	LinAlg.scale 
+	Base.LinAlg.scale 
 
 
 #This routine appends a textline to 
