@@ -17,6 +17,8 @@ import
 	ArrayViews.unsafe_view,
 	Base.LinAlg.scale 
 
+include("samplers.jl")
+
 
 #This routine appends a textline to 
 #to a file
