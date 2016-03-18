@@ -41,7 +41,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
  #Markers
   X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1]
  #Phenotypes
-  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true);[1][:,1]
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1]
   
 # Computing G-Matrix
   n,p=size(X)
