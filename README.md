@@ -44,23 +44,19 @@ using BGLR
 ### GBLUP with BGLR-julia
 <div id="GBLUP" />
 ```R
-# Wheat data
-# Markers
- X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true);
- X=X[1];  #The first component of the Tuple
-
-#Phenotypes
- Y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true);
- Y=Y[1]; #The first component of the Tuple
- y=Y[:,1];
-
-#Relationship matrix derived from pedigree
- A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true);
- A=A[1]; #The first component of the Tuple
-
-#Sets for cross-validations
- sets=vec(readdlm(joinpath(Pkg.dir(),"BGLR/data/wheat.sets.csv")));
-
+# Reading Data 
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1]
+ #Phenotypes
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true);[1][:,1]
+  
+# Computing G-Matrix
+  X=scale(X)
+  G=XX'
+  G=G./p
+  
+  
+  
 ```
 
 
