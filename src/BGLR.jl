@@ -738,7 +738,7 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 			end
 
 			if(typeof(term[2])==RandRegBRR)
-				#fm=updateRandRegBRR(fm,term[1],fm.updateMeans,fm.saveSamples,nSums,k)
+				fm=updateRandRegBRR(fm,term[1],fm.updateMeans,fm.saveSamples,nSums,k)
 			end	
   		end
 
