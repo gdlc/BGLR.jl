@@ -529,7 +529,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
      
         
 	#Update the variance?, it will be true for BRR, but not for FixedEffects
-	if(fm.ETA[label].update_var==true)
+	if(fm.ETA[label].update_var)
 	
 		SS=sumsq(fm.ETA[label].effects)+fm.ETA[label].S0
 		fm.ETA[label].var=SS/rand(Chisq(fm.ETA[label].df),1)[]
@@ -543,8 +543,8 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
                         fm.ETA[label].post_effects2=fm.ETA[label].post_effects2*k+(fm.ETA[label].effects.^2)/nSums
 
 			#Do we need eta?
-                        fm.ETA[label].post_eta =fm.ETA[label].post_eta*k+fm.ETA[label].eta/nSums
-                        fm.ETA[label].post_eta2=fm.ETA[label].post_eta2*k+(fm.ETA[label].eta.^2)/nSums
+                        #fm.ETA[label].post_eta =fm.ETA[label].post_eta*k+fm.ETA[label].eta/nSums
+                        #fm.ETA[label].post_eta2=fm.ETA[label].post_eta2*k+(fm.ETA[label].eta.^2)/nSums
 
                         fm.ETA[label].post_var=fm.ETA[label].post_var*k+fm.ETA[label].var/nSums
                         fm.ETA[label].post_var2=fm.ETA[label].post_var2*k+(fm.ETA[label].var^2)/nSums
