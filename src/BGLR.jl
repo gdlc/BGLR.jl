@@ -467,7 +467,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
                my_axpy(b,xj,fm.error)
         end
         =#
-    
+    #=    
 	#Implementation 3, using unsafe_view, @inbounds and @simd, wheat example: ~6 secs/1500 Iter
 	for j in 1:p
                b=fm.ETA[label].effects[j]
@@ -479,7 +479,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
                b=b-fm.ETA[label].effects[j]
                my_axpy(b,xj,fm.error)
     end
-
+    =#
 	#Implementation 4, using pointers, Base.LinAlg.BLAS.dot, Base.LinAlg.BLAS.axpy! wheat example: ~18 secs/1500 Iter
 
 	#=	
@@ -508,8 +508,8 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 
 	=#
 
-	# Implementation 6 unsafe_view 2
-	#=
+	# Implementation 5 unsafe_view with a few improvments
+
 	z=rand(Normal(0,sqrt(fm.varE)),fm.ETA[label].p)
     lambda=fm.varE/fm.ETA[label].var
         
@@ -526,7 +526,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 		my_axpy(tmp,xj,fm.error)
 		fm.ETA[label].effects[j]=newB
 	end
-    =#  
+     
         
 	#Update the variance?, it will be true for BRR, but not for FixedEffects
 	if(fm.ETA[label].update_var==true)
