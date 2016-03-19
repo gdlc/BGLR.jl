@@ -518,13 +518,13 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
     	SSX=fm.ETA[label].x2[j]
 		xj=unsafe_view(fm.ETA[label].X, :, j)
 		
-		rhs=innersimd(xj,pe)
+		rhs=innersimd(xj,pe,fm.n)
 		rhs+=SSX*b
 		CInv=1/(SSX + lambda)
 		newB=rhs*CInv+sqrt(CInv)*z[j]
 		tmp= b-newB
 		
-		my_axpy(tmp,xj,pe)
+		my_axpy(tmp,xj,pe,fm.n)
 		
 		fm.ETA[label].effects[j]=newB
 	end
