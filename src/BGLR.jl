@@ -510,19 +510,19 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 
 	# Implementation 6 unsafe_view 2
 	
-	z=rand(Normal(0,sqrt(fm.varE)),fm.ETA[lambda].p)
+	z=rand(Normal(0,sqrt(fm.varE)),fm.ETA[label].p)
     lambda=fm.varE/fm.ETA[label].var
         
     for j in 1:p       
-		xj=unsafe_view(fm.ETA[lambda].X, :, j)
+		xj=unsafe_view(fm.ETA[label].X, :, j)
 		rhs=innersimd(xj,fm.error)
-		rhs+=x2[j]*fm.ETA[lambda].effects[j]  
-		C=fm.ETA[lambda].x2[j] + lambda
+		rhs+=x2[j]*fm.ETA[label].effects[j]  
+		C=fm.ETA[label].x2[j] + lambda
 		CInv=1/C
 		newB=rhs*CInv+sqrt(CInv)*z[j]
-		tmp=newB-fm.ETA[lambda].effects[j]
+		tmp=newB-fm.ETA[label].effects[j]
 		my_axpy(tmp,xj,fm.error)
-		fm.ETA[lambda].effects[j]=newB
+		fm.ETA[label].effects[j]=newB
 	end
         
         
