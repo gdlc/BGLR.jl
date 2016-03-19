@@ -469,7 +469,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
         =#
 
 	#Implementation 3, using unsafe_view, @inbounds and @simd, wheat example: ~6 secs/1500 Iter
-
+   rhs=0.0
 	for j in 1:p
                b=fm.ETA[label].effects[j]
                xj=unsafe_view(fm.ETA[label].X, :, j)
