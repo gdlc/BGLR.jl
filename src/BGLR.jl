@@ -469,16 +469,14 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
         =#
 
 	#Implementation 3, using unsafe_view, @inbounds and @simd, wheat example: ~6 secs/1500 Iter
-   rhs=0.0
-   b=0.0
 	for j in 1:p
                b=fm.ETA[label].effects[j]
                xj=unsafe_view(fm.ETA[label].X, :, j)
                rhs=innersimd(xj,fm.error)/fm.varE
                rhs+=fm.ETA[label].x2[j]*b/fm.varE
-               #c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
-               #fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1))
-               #b=b-fm.ETA[label].effects[j]
+               c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
+               fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1))
+               b=b-fm.ETA[label].effects[j]
                my_axpy(b,xj,fm.error)
     end
 
