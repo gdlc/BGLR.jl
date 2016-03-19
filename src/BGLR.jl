@@ -473,7 +473,6 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 	for j in 1:p
                #b=fm.ETA[label].effects[j]
                xj=unsafe_view(fm.ETA[label].X, :, j)
-	           xj=slice(fm.ETA[label].X,:,j)
                rhs=innersimd(xj,fm.error)/fm.varE
                #rhs+=fm.ETA[label].x2[j]*b/fm.varE
                #c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
