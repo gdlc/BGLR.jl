@@ -423,7 +423,7 @@ function innersimd(x, y,n)
 end
 
 
-function my_axpy(a,x,y,n)
+function my_axpy!(a,x,y,n)
     @simd for i=1:n
 	@inbounds y[i]=a*x[i]+y[i]	
     end
@@ -524,7 +524,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 		newB=rhs*CInv+sqrt(CInv)*z[j]
 		tmp= b-newB
 		
-		my_axpy(tmp,xj,pe,fm.n)
+		my_axpy!(tmp,xj,pe,fm.n)
 		
 		fm.ETA[label].effects[j]=newB
 	end
