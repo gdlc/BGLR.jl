@@ -506,7 +506,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
       		Int32(n),Int32(p),fm.ETA[label].X,fm.ETA[label].x2,fm.ETA[label].effects,fm.error,fm.ETA[label].var,fm.varE,Float64(1e-7)
       	     )
 
-	=# e=y-xb + xb-
+	=#
 
 	# Implementation 6 unsafe_view 2
 	
@@ -520,7 +520,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 		C=fm.ETA[label].x2[j] + lambda
 		CInv=1/C
 		newB=rhs*CInv+sqrt(CInv)*z[j]
-		tmp=fm.ETA[label].effects[j]-newB
+		tmp= fm.ETA[label].effects[j]-newB
 		my_axpy(tmp,xj,fm.error)
 		fm.ETA[label].effects[j]=newB
 	end
