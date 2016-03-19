@@ -414,17 +414,17 @@ function BRR_post_init(LT::RandRegBRR, Vy::Float64, nLT::Int64, R2::Float64)
 end
 
 
-function innersimd(x, y)
-    s = zero(eltype(x))
-    @simd for i=1:length(x)
+function innersimd(x, y,n)
+    s = 0.0
+    @simd for i=1:n
         @inbounds s += x[i]*y[i]
     end
     s
 end
 
 
-function my_axpy(a,x,y)
-    @simd for i=1:length(x)
+function my_axpy(a,x,y,n)
+    @simd for i=1:n
 	@inbounds y[i]=a*x[i]+y[i]	
     end
 end
@@ -512,23 +512,23 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 
 	z=rand(Normal(0,sqrt(fm.varE)),fm.ETA[label].p)
     lambda=fm.varE/fm.ETA[label].var
-        
+    pe=unsafe_view(fm.error)
     for j in 1:p   
     	b=fm.ETA[label].effects[j] 
     	SSX=fm.ETA[label].x2[j]
 		xj=unsafe_view(fm.ETA[label].X, :, j)
 		
-		rhs=innersimd(xj,fm.error)
+		rhs=innersimd(xj,pe)
 		rhs+=SSX*b
 		CInv=1/(SSX + lambda)
 		newB=rhs*CInv+sqrt(CInv)*z[j]
 		tmp= b-newB
 		
-		my_axpy(tmp,xj,fm.error)
+		my_axpy(tmp,xj,pe)
 		
 		fm.ETA[label].effects[j]=newB
 	end
-     
+    pe=0.0
         
 	#Update the variance?, it will be true for BRR, but not for FixedEffects
 	if(fm.ETA[label].update_var)
