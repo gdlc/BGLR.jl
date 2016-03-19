@@ -471,15 +471,15 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 	#Implementation 3, using unsafe_view, @inbounds and @simd, wheat example: ~6 secs/1500 Iter
 
 	for j in 1:p
-               #b=fm.ETA[label].effects[j]
-               #xj=unsafe_view(fm.ETA[label].X, :, j)
-	           #xj=slice(fm.ETA[label].X,:,j)
-               #rhs=innersimd(xj,fm.error)/fm.varE
-               #rhs+=fm.ETA[label].x2[j]*b/fm.varE
-               #c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
-               #fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1))
-               #b=b-fm.ETA[label].effects[j]
-               #my_axpy(b,xj,fm.error)
+               b=fm.ETA[label].effects[j]
+               xj=unsafe_view(fm.ETA[label].X, :, j)
+	           xj=slice(fm.ETA[label].X,:,j)
+               rhs=innersimd(xj,fm.error)/fm.varE
+               rhs+=fm.ETA[label].x2[j]*b/fm.varE
+               c=fm.ETA[label].x2[j]/fm.varE + 1.0/fm.ETA[label].var
+               fm.ETA[label].effects[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1))
+               b=b-fm.ETA[label].effects[j]
+               my_axpy(b,xj,fm.error)
     end
 
 	#Implementation 4, using pointers, Base.LinAlg.BLAS.dot, Base.LinAlg.BLAS.axpy! wheat example: ~18 secs/1500 Iter
@@ -739,7 +739,7 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 			end
 
 			if(typeof(term[2])==RandRegBRR)
-				fm=updateRandRegBRR(fm,term[1],fm.updateMeans,fm.saveSamples,nSums,k)
+				#fm=updateRandRegBRR(fm,term[1],fm.updateMeans,fm.saveSamples,nSums,k)
 			end	
   		end
 
