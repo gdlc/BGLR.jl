@@ -511,7 +511,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 	# Implementation 6 unsafe_view 2
 	
 	z=rand(Normal(0,sqrt(fm.varE)),fm.ETA[lambda].p)
-    lambda=fm.varE/fm.ETA[lambda].var
+    lambda=fm.varE/fm.ETA[label].var
         
     for j in 1:p       
 		xj=unsafe_view(fm.ETA[lambda].X, :, j)
