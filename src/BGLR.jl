@@ -469,7 +469,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
         =#
 
 	#Implementation 3, using unsafe_view, @inbounds and @simd, wheat example: ~6 secs/1500 Iter
-
+#=
 	for j in 1:p
                b=fm.ETA[label].effects[j]
                xj=unsafe_view(fm.ETA[label].X, :, j)
@@ -481,7 +481,7 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
                b=b-fm.ETA[label].effects[j]
                my_axpy(b,xj,fm.error)
     end
-
+    =#
 	#Implementation 4, using pointers, Base.LinAlg.BLAS.dot, Base.LinAlg.BLAS.axpy! wheat example: ~18 secs/1500 Iter
 
 	#=	
