@@ -517,13 +517,13 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
     	b=fm.ETA[label].effects[j] 
     	SSX=fm.ETA[label].x2[j]
 		xj=unsafe_view(fm.ETA[label].X, :, j)
-		#rhs=innersimd(xj,fm.error,fm.n)
+		rhs=innersimd(xj,fm.error,fm.n)
 		rhs+=SSX*b
 		CInv=1/(SSX + lambda)
-		newB=rhs*CInv+sqrt(CInv)*z[j]
-		tmp=b-newB
-		#my_axpy!(tmp,xj,fm.error,fm.n)
-		fm.ETA[label].effects[j]=newB
+		fm.ETA[label].effects[j]=rhs*CInv+sqrt(CInv)*z[j]
+		tmp=b-fm.ETA[label].effects[j]
+		my_axpy!(tmp,xj,fm.error,fm.n)
+		
 	end
     
 	#Update the variance?, it will be true for BRR, but not for FixedEffects
