@@ -1,3 +1,33 @@
+#function to get the levels of a factor
+function levels(x::Array{Int64,1})
+	sort(unique(x))
+end
+
+#function to get the number of levels of a factor
+function nlevels(x::Array{Int64,1})
+	size(levels(x))[1]
+end
+
+#Sum of squares by column and by groups
+#It takes as argument a matrix 
+function sumsq_group(X::Array{Float64,2}, groups::Array{Int64,1})
+	lev=levels(groups)
+	nGroups=size(lev)[1]   	
+	p=size(X)[2]
+	x2=zeros(nGroups,p)
+
+	for k in 1:nGroups
+		#Temporary matrix with the rows that 
+		#belong to group_k
+		tmp=X[groups.==lev[k],:]
+		for j in 1:p
+			x2[k,j]=sum(tmp[:,j].^2)
+		end
+	end
+
+	return(x2)
+end
+
 #Functions to implement samplers
 
 #=
