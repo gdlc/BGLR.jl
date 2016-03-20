@@ -726,7 +726,10 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
               
    if (nIter>0)
    	for i in 1:nIter ## Sampler
-       		## determining whether samples or post. means need to be updated
+		
+		tic(); 	#Timer
+       		
+		## determining whether samples or post. means need to be updated
    		
 		fm.saveSamples=(i%thin)==0
    		
@@ -784,8 +787,11 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 			fm.post_yHat2=fm.post_yHat2*k+(fm.yHat.^2)/nSums
 
   		end
+		
+		elapsed=toq();
+		
   		if verbose 
-  			println("Iter: ",i," VarE=",round(fm.varE,4)) 
+  			println("Iter: ",i," VarE=",round(fm.varE,4),"  Time/Iter=",round(elapsed,4)) 
   		end
   		
 	 end # end of sampler
