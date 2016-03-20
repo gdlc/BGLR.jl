@@ -79,12 +79,15 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
    A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true);
    A=A[1]; #The first component of the Tuple
 
-  X1=X[:,1:50];
-  X2=X[:,51:1279];
-
   ETA=Dict("mrk"=>BRR(X),
-		 "ped"=>RKHS(A))
+		 "ped"=>RKHS(K=A))
 		 
   fm=bglr(y=y,ETA=ETA);
+  
+  ## Retrieving estimates and predictions
+  fm.varE # posterior mean of error variance
+  fm.yHat # predictions
+  fm.ETA["mrk"].var # variance of the random effect associated to markers
+  fm.ETA["ped"].var # variance of the random effect associated to pedigree
   
 ```
