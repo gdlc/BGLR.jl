@@ -508,25 +508,22 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 
 	=#
 
-	# Implementation 5 unsafe_view with a few improvments
+	# Implementation 5 unsafe_view with a few improvements
 
 	z=rand(Normal(0,sqrt(fm.varE)),fm.ETA[label].p)
     lambda=fm.varE/fm.ETA[label].var
     pe=unsafe_view(fm.error)
-    for j in 1:p  
-         
+    for j in 1:p         
     	b=fm.ETA[label].effects[j] 
     	SSX=fm.ETA[label].x2[j]
 		xj=unsafe_view(fm.ETA[label].X, :, j)
-		
 		rhs=innersimd(xj,pe,fm.n)
 		rhs+=SSX*b
 		CInv=1/(SSX + lambda)
-		newB=rhs*CInv+sqrt(CInv)*z[j]
-		tmp= b-newB
-		
+		newB=rhs*CInv
+		newB+=sqrt(CInv)*z[j]
+		tmp=b-newB
 		my_axpy!(tmp,xj,pe,fm.n)
-		
 		fm.ETA[label].effects[j]=newB
 	end
 	pe=0
