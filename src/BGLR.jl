@@ -119,6 +119,29 @@ function sample_beta(n::Int64, p::Int64, X::Array{Float64,2},x2::Array{Float64,1
 
 end
 
+##################################################################################################
+#Just the welcome function that will appear every time that your run the program
+function welcome()
+
+  print("\n");
+  print("#--------------------------------------------------------------------#\n");
+  print("#        _\\\\|//_                                                     #\n");
+  print("#       (` o-o ')      BGLR-J v0.01                                  #\n");
+  print("#------ooO-(_)-Ooo---------------------------------------------------#\n");
+  print("#                      Bayesian Generalized Linear Regression        #\n");
+  print("#                      Gustavo de los Campos, gustavoc@msu.edu       #\n");
+  print("#    .oooO     Oooo.   Paulino Perez Rodriguez, perpdgo@gmail.com    #\n");
+  print("#    (   )     (   )   March, 2016                                   #\n");
+  print("#_____\\ (_______) /_________________________________________________ #\n");
+  print("#      \\_)     (_/                                                   #\n");
+  print("#                                                                    #\n");
+  print("#------------------------------------------------------------------- #\n");
+  print("\n")
+
+end
+##################################################################################################
+
+
 
 streamOrASCIIString=Union{ASCIIString,IOStream}
 
@@ -511,11 +534,11 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 	# Implementation 5 unsafe_view with a few improvements
      
 	z=rand(Normal(0,sqrt(fm.varE)),fm.ETA[label].p)
-    lambda=fm.varE/fm.ETA[label].var
-    rhs=0.0
-    for j in 1:p         
-    	b=fm.ETA[label].effects[j] 
-    	SSX=fm.ETA[label].x2[j]
+    	lambda=fm.varE/fm.ETA[label].var
+    	rhs=0.0
+    	for j in 1:p         
+    		b=fm.ETA[label].effects[j] 
+    		SSX=fm.ETA[label].x2[j]
 		xj=unsafe_view(fm.ETA[label].X, :, j)
 		rhs=innersimd(xj,fm.error,fm.n)+SSX*b
 		CInv=1/(SSX + lambda)
@@ -633,6 +656,8 @@ end
 
 function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=string(pwd(),"/"),verbose=true,df0=1,S0=-Inf,naCode= -999)
    #y=rand(10);ETA=Dict();nIter=-1;R2=.5;burnIn=500;thin=5;path="";verbose=true;df0=0;S0=0;saveAt=pwd()*"/"
+
+   welcome()
 
    if(y=="null")
       error("Provide the response (y).")
