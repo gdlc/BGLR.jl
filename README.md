@@ -32,7 +32,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Modeling genetic by environment interactions using BGLR-J]()
   * [BGLR-J Utils (a collection of utilitary functions)]()
 
-### GBLUP with BGLR-julia
+### Genomic BLUP using BGLR-julia
 <div id="GBLUP" />
 ```julia
  using BGLR
@@ -63,5 +63,28 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   fm.ETA["mrk"].var # variance of the random effect
 ```
 
+### Integrating fixed effects, regression on markers and pedigrees
+<div id="FMP" />
 
+```julia
+ using BGLR
+ 
+ # Reading Data 
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+  
+  #Relationship matrix derived from pedigree
+   A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true);
+   A=A[1]; #The first component of the Tuple
 
+  X1=X[:,1:50];
+  X2=X[:,51:1279];
+
+  ETA=Dict("mrk"=>BRR(X),
+		 "ped"=>RKHS(A))
+		 
+  fm=bglr(y=y,ETA=ETA);
+  
+```
