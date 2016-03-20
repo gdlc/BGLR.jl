@@ -39,15 +39,15 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
  
 # Reading Data 
  #Markers
-  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1]
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
  #Phenotypes
-  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1]
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
   
 # Computing G-Matrix
-  n,p=size(X)
-  X=scale(X)
-  G=X*X'
-  G=G./p
+  n,p=size(X);
+  X=scale(X);
+  G=X*X';
+  G=G./p;
 
 # Fitting the model
   # Readme: y is the phenotype vector, 
@@ -55,12 +55,12 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   #         In this case ETA has only one term. 
   #         RKHS(K=G) is used to define a random effect with covariance matrix G.
   
-  fm=bglr( y=y, ETA=Dict("mrk"=>RKHS(K=G)) )
+  fm=bglr( y=y, ETA=Dict("mrk"=>RKHS(K=G)));
   
 ## Retrieving estimates and predictions
   fm.varE # posterior mean of error variance
   fm.yHat # predictions
-  fm.ETA["mrk"].varU # variance of the random effect
+  fm.ETA["mrk"].var # variance of the random effect
 ```
 
 
