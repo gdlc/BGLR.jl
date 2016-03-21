@@ -8,7 +8,7 @@ export
 	RKHS,
 	BRR,
 	FixEff,
-	read_bed
+	read_bed,
 	model_matrix
 
 import
