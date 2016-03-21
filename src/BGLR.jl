@@ -8,8 +8,8 @@ export
 	RKHS,
 	BRR,
 	FixEff,
-	read_bed
-	model_matrix
+	#read_bed
+	#model_matrix
 
 import
 	Distributions.Normal,
