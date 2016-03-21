@@ -92,7 +92,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 
 ```julia
 ##########################################################################################
-#mice dataset
+#mice
 ##########################################################################################
 
 using BGLR
@@ -138,19 +138,19 @@ y=pheno[1][:,col]
 y=convert(Array{Float64,1}, y)  #Be sure that y is Array{Float64,1}
 
 #Gender
-col=vec(find(pheno[2].=="GENDER"))[1]
+col=vec(find(pheno[2].=="GENDER"))[1] #column for GENDER
 GENDER=pheno[1][:,col]
 X1=model_matrix(GENDER)
 
 #Litter
-col=vec(find(pheno[2].=="Litter"))[1]
+col=vec(find(pheno[2].=="Litter"))[1] #column for Litter
 Litter=pheno[1][:,col]
 X2=model_matrix(Litter)
 
 Fixed=hcat(X1,X2)
 
 #Gage
-col=vec(find(pheno[2].=="cage"))[1]
+col=vec(find(pheno[2].=="cage"))[1] #column for cage
 cage=pheno[1][:,col]
 X3=model_matrix(cage)
 
@@ -172,5 +172,4 @@ plot(x=fm.y,
      Guide.ylabel("yHat"),
      Guide.xlabel("y"),
      Guide.title("Observed vs predicted"))
-  
 ```
