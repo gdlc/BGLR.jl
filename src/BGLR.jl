@@ -7,7 +7,8 @@ export
 	bglr,
 	RKHS,
 	BRR,
-	FixEff
+	FixEff,
+	read_ped
 
 import
 	Distributions.Normal,
@@ -18,6 +19,7 @@ import
 	Base.LinAlg.scale 
 
 include("samplers.jl")
+include("util_plink.jl")
 
 
 #This routine appends a textline to 
