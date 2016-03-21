@@ -107,7 +107,7 @@ function read_bed(bed_file::UTF8String,n::Int64,p::Int64)
             
             			if(l<n)    
             				#Add one because in julia we begin counting in 1
-                			out[(l+(j*n))+1]=recode[1+code]
+                			X[(l+(j*n))+1]=recode[1+code]
             			end                          
     			end
     		end
