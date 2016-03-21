@@ -88,47 +88,33 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 
 ```julia
 ##########################################################################################
-#mice
+# Example xxx of 
 ##########################################################################################
 
 using BGLR
 using Gadfly
 
-# Reading data (markers are in [BED](http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml) format ).
+# Reading data (markers are in BED binary format, http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml).
   X=read_bed(joinpath(Pkg.dir(),"BGLR/data/mice.X.bed"),1814,10346);
   pheno=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.pheno.csv");header=true);
+  varnames=vec(pheno[2]); pheno=pheno[1]
+  y=pheno[:,varnames.=="Obesity.BMI"] #column for BMI
 
-#pheno contains two Tuples, the first one is the data without header and 
-#the second tuple the headers
+# Incidence matrix for sex (Male=1) and litter size
+  male=(pheno[:,varnames.=="GENDER"].=="M").*1.0 ## dummy variable for male
+  litterSize=pheno[:,varnames.=="Litter"]
+  Z=hcat(male, litterSize)
+  
 
-pheno[1]  #First tuple
-pheno[2]  #Second tuple
-
-col=vec(find(pheno[2].=="Obesity.BMI"))[1] #column for BMI
-y=pheno[1][:,col]
-y=convert(Array{Float64,1}, y)  #Be sure that y is Array{Float64,1}
-
-#Gender
-col=vec(find(pheno[2].=="GENDER"))[1] #column for GENDER
-GENDER=pheno[1][:,col]
-X1=model_matrix(GENDER)
-
-#Litter
-col=vec(find(pheno[2].=="Litter"))[1] #column for Litter
-Litter=pheno[1][:,col]
-X2=model_matrix(Litter)
-
-Fixed=hcat(X1,X2)
-
-#Gage
-col=vec(find(pheno[2].=="cage"))[1] #column for cage
+# Incidence matrix for cage
+  W=col=vec(find(pheno[2].=="cage"))[1] #column for cage
 cage=pheno[1][:,col]
 X3=model_matrix(cage)
 
 
 #Relationship matrix derived from pedigree
-A=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.A.csv");header=true);
-A=A[1]; #The first component of the Tuple
+ A=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.A.csv");header=true);
+ A=A[1]; #The first component of the tuple has the data
 
 ETA=Dict("Fixed"=>FixEff(Fixed),
 	     "Cage"=>BRR(X3),
