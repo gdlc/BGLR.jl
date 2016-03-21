@@ -99,7 +99,9 @@ using Gadfly
   pheno=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.pheno.csv");header=true);
   varnames=vec(pheno[2]); pheno=pheno[1]
   y=pheno[:,varnames.=="Obesity.BMI"] #column for BMI
-
+  y=convert(Array{Float64,1}, y)
+  
+  
 # Incidence matrix for sex (Male=1) and litter size
   male=(pheno[:,varnames.=="GENDER"].=="M").*1.0 ## dummy variable for male
   litterSize=pheno[:,varnames.=="Litter"]
