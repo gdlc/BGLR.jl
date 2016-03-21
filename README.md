@@ -103,23 +103,21 @@ using Gadfly
 # Incidence matrix for sex (Male=1) and litter size
   male=(pheno[:,varnames.=="GENDER"].=="M").*1.0 ## dummy variable for male
   litterSize=pheno[:,varnames.=="Litter"]
-  Z=hcat(male, litterSize)
+  W=hcat(male, litterSize)
   
 
 # Incidence matrix for cage
-  W=col=vec(find(pheno[2].=="cage"))[1] #column for cage
-cage=pheno[1][:,col]
-X3=model_matrix(cage)
+  W=model_matrix(pheno[:,varnames.=="cage"])
 
 
 #Relationship matrix derived from pedigree
  A=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.A.csv");header=true);
  A=A[1]; #The first component of the tuple has the data
 
-ETA=Dict("Fixed"=>FixEff(Fixed),
-	     "Cage"=>BRR(X3),
-	     "Mrk"=>BRR(X),
-	     "Ped"=>RKHS(K=A))
+ETA=Dict("Fixed"=>FixEff(W),
+	 "Cage"=>BRR(Z),
+	 "Mrk"=>BRR(X),
+	 "Ped"=>RKHS(K=A))
 
 
 fm=bglr(y=y,ETA=ETA);
