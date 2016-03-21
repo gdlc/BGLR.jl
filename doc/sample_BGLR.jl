@@ -311,3 +311,85 @@ function read_bed(bed_file::ASCIIString,n::Int64,p::Int64)
 end
 
 X=read_bed("mice.X.bed",1814,10346);
+
+##########################################################################################
+#mice
+##########################################################################################
+
+using BGLR
+using Gadfly
+
+#model matrix for a factor using k-1 Dummy variables
+#where k is the number of levels
+
+function model_matrix(x)
+	
+	levels=sort(unique(x))
+	n=size(x)[1]
+	p=size(levels)[1]
+	
+	if(p<2) 
+		error("The factor should have at least 2 levels")
+	end
+		
+	X=zeros(n,p-1)
+	
+	for j in 2:p
+		index=(x.==levels[j])
+		X[index,j-1]=1
+	end
+	
+	X
+end
+
+
+#Markers in plink format
+X=read_bed(joinpath(Pkg.dir(),"BGLR/data/mice.X.bed"),1814,10346);
+
+pheno=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.pheno.csv");header=true);
+
+#pheno contains two Tuples, the first one is the data without header and 
+#the second tuple the headers
+
+pheno[1]  #First tuple
+pheno[2]  #Second tuple
+
+col=vec(find(pheno[2].=="Obesity.BMI"))[1] #column for BMI
+y=pheno[1][:,col]
+y=convert(Array{Float64,1}, y)  #Be sure that y is Array{Float64,1}
+
+#Gender
+col=vec(find(pheno[2].=="GENDER"))[1]
+GENDER=pheno[1][:,col]
+X1=model_matrix(GENDER)
+
+#Litter
+col=vec(find(pheno[2].=="Litter"))[1]
+Litter=pheno[1][:,col]
+X2=model_matrix(Litter)
+
+Fixed=hcat(X1,X2)
+
+#Gage
+col=vec(find(pheno[2].=="cage"))[1]
+cage=pheno[1][:,col]
+X3=model_matrix(cage)
+
+
+#Relationship matrix derived from pedigree
+A=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.A.csv");header=true);
+A=A[1]; #The first component of the Tuple
+
+ETA=Dict("Fixed"=>FixEff(Fixed),
+	     "Cage"=>BRR(X3),
+	     "Mrk"=>BRR(X),
+	     "Ped"=>RKHS(K=A))
+
+
+fm=bglr(y=y,ETA=ETA);
+
+plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
