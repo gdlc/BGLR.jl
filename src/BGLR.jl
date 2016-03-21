@@ -8,7 +8,8 @@ export
 	RKHS,
 	BRR,
 	FixEff,
-	read_bed
+	#read_bed
+	#model_matrix
 
 import
 	Distributions.Normal,
@@ -21,6 +22,26 @@ import
 include("samplers.jl")
 include("util_plink.jl")
 
+
+function model_matrix(x)
+	
+	levels=sort(unique(x))
+	n=size(x)[1]
+	p=size(levels)[1]
+	
+	if(p<2) 
+		error("The factor should have at least 2 levels")
+	end
+		
+	X=zeros(n,p-1)
+	
+	for j in 2:p
+		index=(x.==levels[j])
+		X[index,j-1]=1
+	end
+	
+	X
+end
 
 #This routine appends a textline to 
 #to a file

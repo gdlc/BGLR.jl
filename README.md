@@ -63,23 +63,19 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   fm.ETA["mrk"].var # variance of the random effect
 ```
 
-### Parametric Shrinkage and Variable Selection
+### Bayesian Ridge Regression
 <div id="BRR" />
 
 ```julia
  using BGLR
  
  # Reading Data 
- #Markers
-  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
- #Phenotypes
-  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+   X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+   y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
   
-  #Ridge Regression
-  
-  ETA=Dict("mrk"=>BRR(X))
-		 
-  fm=bglr(y=y,ETA=ETA);
+  # Bayesian Ridge Regression
+   ETA=Dict("mrk"=>BRR(X))
+   fm=bglr(y=y,ETA=ETA);
   
   ## Retrieving estimates and predictions
   fm.varE # posterior mean of error variance
@@ -87,31 +83,48 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   fm.ETA["mrk"].var # variance of the random effect associated to markers
 ```
 
-### Integrating fixed effects, regression on markers and pedigrees
+### Integrating fixed effects, random regression on markers and pedigrees data
 <div id="FMP" />
 
 ```julia
- using BGLR
- 
- # Reading Data 
- #Markers
-  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
- #Phenotypes
-  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
-  
-  #Relationship matrix derived from pedigree
-   A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true);
-   A=A[1]; #The first component of the Tuple
+##########################################################################################
+# Example xxx of 
+##########################################################################################
 
-  ETA=Dict("mrk"=>BRR(X),
-		 "ped"=>RKHS(K=A))
-		 
-  fm=bglr(y=y,ETA=ETA);
+using BGLR
+using Gadfly
+
+# Reading data (markers are in BED binary format, http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml).
+  X=read_bed(joinpath(Pkg.dir(),"BGLR/data/mice.X.bed"),1814,10346);
+  pheno=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.pheno.csv");header=true);
+  varnames=vec(pheno[2]); pheno=pheno[1]
+  y=pheno[:,varnames.=="Obesity.BMI"] #column for BMI
+
+# Incidence matrix for sex (Male=1) and litter size
+  male=(pheno[:,varnames.=="GENDER"].=="M").*1.0 ## dummy variable for male
+  litterSize=pheno[:,varnames.=="Litter"]
+  W=hcat(male, litterSize)
   
-  ## Retrieving estimates and predictions
-  fm.varE # posterior mean of error variance
-  fm.yHat # predictions
-  fm.ETA["mrk"].var # variance of the random effect associated to markers
-  fm.ETA["ped"].var # variance of the random effect associated to pedigree
-  
+
+# Incidence matrix for cage
+  W=model_matrix(pheno[:,varnames.=="cage"])
+
+
+#Relationship matrix derived from pedigree
+ A=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.A.csv");header=true);
+ A=A[1]; #The first component of the tuple has the data
+
+ETA=Dict("Fixed"=>FixEff(W),
+	 "Cage"=>BRR(Z),
+	 "Mrk"=>BRR(X),
+	 "Ped"=>RKHS(K=A))
+
+
+fm=bglr(y=y,ETA=ETA);
+
+plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
 ```
