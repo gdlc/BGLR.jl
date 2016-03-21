@@ -20,126 +20,7 @@ import
 	Base.LinAlg.scale 
 
 include("samplers.jl")
-include("util_plink.jl")
-
-
-function model_matrix(x)
-	levels=sort(unique(x))
-	n=size(x)[1]
-	p=size(levels)[1]
-	
-	if(p<2) 
-		error("The factor should have at least 2 levels")
-	end
-		
-	X=zeros(n,p-1)
-	
-	for j in 2:p
-		index=(x.==levels[j])
-		X[index,j-1]=1
-	end
-	
-	X
-end
-
-#This routine appends a textline to 
-#to a file
-
-function writeln(con, x, delim)
- n=length(x)
- if n>1
-   for i in 1:(n-1)
-     write(con,string(x[i],delim))
-   end
-   write(con,string(x[n]))
- else
-    write(con,string(x))
- end
- write(con,"\n") 
- flush(con)
-end
-
-#Function to compute the sum of squares of the entries of a vector
-
-function sumsq(x::Vector{Float64});
-	return(sum(x.^2))
-end
-
-#This routine was adapted from rinvGauss function from S-Plus
-# Random variates from inverse Gaussian distribution
-# Reference:
-#      Chhikara and Folks, The Inverse Gaussian Distribution,
-#      Marcel Dekker, 1989, page 53.
-# GKS  15 Jan 98
-
-function rinvGauss(nu::Float64, lambda::Float64)
-        tmp = randn(1);
-        y2 = tmp[1]*tmp[1];
-        u = rand(1);
-        u=u[1];
-        r1 = nu/(2*lambda) * (2*lambda + nu*y2 - sqrt(4*lambda*nu*y2 + nu*nu*y2*y2));
-        r2 = nu*nu/r1;
-        if(u < nu/(nu+r1))
-                return(r1)
-        else
-                return(r2)
-        end
-end
-
-
-#=
- * This is a generic function to sample betas in various models, including 
- * Bayesian LASSO, BayesA, Bayesian Ridge Regression, etc.
- 
- * For example, in the Bayesian LASSO, we wish to draw samples from the full 
- * conditional distribution of each of the elements in the vector bL. The full conditional 
- * distribution is normal with mean and variance equal to the solution (inverse of the coefficient of the left hand side)
- * of the following equation (See suplementary materials in de los Campos et al., 2009 for details),
-   
-    (1/varE x_j' x_j + 1/(varE tau_j^2)) bL_j = 1/varE x_j' e
- 
-    or equivalently, 
-    
-    mean= (1/varE x_j' e)/ (1/varE x_j' x_j + 1/(varE tau_j^2))
-    variance= 1/ (1/varE x_j' x_j + 1/(varE tau_j^2))
-    
-    xj= the jth column of the incidence matrix
-    
- *The notation in the routine is as follows:
- 
- n: Number of rows in X
- pL: Number of columns in X
- XL: the matrix X stacked by columns
- XL2: vector with x_j' x_j, j=1,...,p
- bL: vector of regression coefficients
- e: vector with residuals, e=y-yHat, yHat= predicted values
- varBj: vector with variances, 
-	For Bayesian LASSO, varBj=tau_j^2 * varE, j=1,...,p
-	For Ridge regression, varBj=varB, j=1,...,p, varB is the variance common to all betas.
-	For BayesA, varBj=varB_j, j=1,...,p
-	For BayesCpi, varBj=varB, j=1,...,p, varB is the variance common to all betas
-	
- varE: residual variance
- minAbsBeta: in some cases values of betas near to zero can lead to numerical problems in BL, 
-             so, instead of using this tiny number we assingn them minAbsBeta
- 
-=#
-
-function sample_beta(n::Int64, p::Int64, X::Array{Float64,2},x2::Array{Float64,1},
-		     b::Array{Float64,1},error::Array{Float64,1},varBj::Array{Float64,1},
-		     varE::Float64;minAbsBeta=1e-9)
-
-	for j in 1:p
-                bj=b[j]
-                rhs=dot(X[:,j],error)/varE
-                rhs+=x2[j]*b/fm.varE
-                c=x2[j]/varE + 1.0/varBj
-                b[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1))
-                bj=bj-b[j]
-                axpy!(bj,X[:,j],error)
-        end 
-
-end
+include("util.jl")
 
 ##################################################################################################
 #Just the welcome function that will appear every time that your run the program
@@ -162,8 +43,6 @@ function welcome()
 
 end
 ##################################################################################################
-
-
 
 streamOrASCIIString=Union{ASCIIString,IOStream}
 
@@ -458,21 +337,6 @@ function BRR_post_init(LT::RandRegBRR, Vy::Float64, nLT::Int64, R2::Float64)
 	end
 end
 
-
-function innersimd(x, y,n)
-    s = 0.0
-    @simd for i=1:n
-        @inbounds s += x[i]*y[i]
-    end
-    s
-end
-
-
-function my_axpy!(a,x,y,n)
-    @simd for i=1:n
-	@inbounds y[i]=a*x[i]+y[i]	
-    end
-end
 
 #Update RandRegBRR
 function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
@@ -886,16 +750,3 @@ end
 
 end #module end
 
-
-### UTILS
-
-function scale(X::Array{Float64,2};center=true,scale=true)
-    n,p=size(X)
-    for j in 1:p
-        xj=X[:,j]
-        mu=mean(xj)
-        SD=std(xj)
-    	X[:,j]=(xj-mu)/SD
-    end
-	X
-end

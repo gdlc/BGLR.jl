@@ -120,3 +120,107 @@ end
 
 #Testing
 #X=read_bed("mice.X.bed",1814,10346);
+
+#model matrix for a factor using p-1 Dummy variables
+#where p is the number of levels
+
+function model_matrix(x)
+        levels=sort(unique(x))
+        n=size(x)[1]
+        p=size(levels)[1]
+
+        if(p<2)
+                error("The factor should have at least 2 levels")
+        end
+
+        X=zeros(n,p-1)
+
+        for j in 2:p
+                index=(x.==levels[j])
+                X[index,j-1]=1
+        end
+
+        X
+end
+
+#This routine appends a textline to
+#to a file
+
+function writeln(con, x, delim)
+ n=length(x)
+ if n>1
+   for i in 1:(n-1)
+     write(con,string(x[i],delim))
+   end
+   write(con,string(x[n]))
+ else
+    write(con,string(x))
+ end
+ write(con,"\n")
+ flush(con)
+end
+
+#Function to compute the sum of squares of the entries of a vector
+
+function sumsq(x::Vector{Float64});
+        return(sum(x.^2))
+end
+
+#function to get the levels of a factor
+function levels(x::Array{Int64,1})
+        sort(unique(x))
+end
+
+#function to get the number of levels of a factor
+function nlevels(x::Array{Int64,1})
+        size(levels(x))[1]
+end
+
+#Sum of squares by column and by groups
+#It takes as argument a matrix
+function sumsq_group(X::Array{Float64,2}, groups::Array{Int64,1})
+        lev=levels(groups)
+        nGroups=size(lev)[1]
+        p=size(X)[2]
+        x2=zeros(nGroups,p)
+
+        for k in 1:nGroups
+                #Temporary matrix with the rows that
+                #belong to group_k
+                tmp=X[groups.==lev[k],:]
+                for j in 1:p
+                        x2[k,j]=sum(tmp[:,j].^2)
+                end
+        end
+
+        return(x2)
+end
+
+
+function innersimd(x, y,n)
+    s = 0.0
+    @simd for i=1:n
+        @inbounds s += x[i]*y[i]
+    end
+    s
+end
+
+
+function my_axpy!(a,x,y,n)
+    @simd for i=1:n
+        @inbounds y[i]=a*x[i]+y[i]
+    end
+end
+
+
+function scale(X::Array{Float64,2};center=true,scale=true)
+    n,p=size(X)
+    for j in 1:p
+        xj=X[:,j]
+        mu=mean(xj)
+        SD=std(xj)
+        X[:,j]=(xj-mu)/SD
+    end
+        X
+end
+
