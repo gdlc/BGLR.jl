@@ -75,7 +75,7 @@ Recode snp to 0,1,2 Format using allele "1" as reference
 #This is a preeliminary version, it is not memory efficient
 #check also coding for missing values
 
-function read_bed(bed_file::ASCIIString,n::Int64,p::Int64)
+function read_bed(bed_file::UTF8String,n::Int64,p::Int64)
 
 	s = open(bed_file)
 	read(s,UInt8) == 0x6c && read(s,UInt8) == 0x1b || error("Unknown file format")
