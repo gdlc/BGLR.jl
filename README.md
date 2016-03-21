@@ -107,7 +107,7 @@ using Gadfly
   
 
 # Incidence matrix for cage
-  W=model_matrix(pheno[:,varnames.=="cage"])
+  Z=model_matrix(pheno[:,varnames.=="cage"])
 
 
 #Relationship matrix derived from pedigree
