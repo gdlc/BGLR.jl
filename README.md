@@ -63,23 +63,19 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   fm.ETA["mrk"].var # variance of the random effect
 ```
 
-### Parametric Shrinkage and Variable Selection
+### Bayesian Ridge Regression
 <div id="BRR" />
 
 ```julia
  using BGLR
  
  # Reading Data 
- #Markers
-  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
- #Phenotypes
-  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+   X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+   y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
   
-  #Ridge Regression
-  
-  ETA=Dict("mrk"=>BRR(X))
-		 
-  fm=bglr(y=y,ETA=ETA);
+  # Bayesian Ridge Regression
+   ETA=Dict("mrk"=>BRR(X))
+   fm=bglr(y=y,ETA=ETA);
   
   ## Retrieving estimates and predictions
   fm.varE # posterior mean of error variance
@@ -87,7 +83,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   fm.ETA["mrk"].var # variance of the random effect associated to markers
 ```
 
-### Integrating fixed effects, regression on markers and pedigrees
+### Integrating fixed effects, random regression on markers and pedigrees data
 <div id="FMP" />
 
 ```julia
@@ -98,34 +94,9 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 using BGLR
 using Gadfly
 
-#model matrix for a factor using k-1 Dummy variables
-#where k is the number of levels
-
-function model_matrix(x)
-	
-	levels=sort(unique(x))
-	n=size(x)[1]
-	p=size(levels)[1]
-	
-	if(p<2) 
-		error("The factor should have at least 2 levels")
-	end
-		
-	X=zeros(n,p-1)
-	
-	for j in 2:p
-		index=(x.==levels[j])
-		X[index,j-1]=1
-	end
-	
-	X
-end
-
-
-#Markers in plink format
-X=read_bed(joinpath(Pkg.dir(),"BGLR/data/mice.X.bed"),1814,10346);
-
-pheno=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.pheno.csv");header=true);
+# Reading data (markers are in [BED](http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml) format ).
+  X=read_bed(joinpath(Pkg.dir(),"BGLR/data/mice.X.bed"),1814,10346);
+  pheno=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.pheno.csv");header=true);
 
 #pheno contains two Tuples, the first one is the data without header and 
 #the second tuple the headers
