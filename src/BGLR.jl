@@ -8,8 +8,8 @@ export
 	RKHS,
 	BRR,
 	FixEff,
-	#read_bed
-	#model_matrix
+	read_bed
+	model_matrix
 
 import
 	Distributions.Normal,
@@ -24,7 +24,6 @@ include("util_plink.jl")
 
 
 function model_matrix(x)
-	
 	levels=sort(unique(x))
 	n=size(x)[1]
 	p=size(levels)[1]
