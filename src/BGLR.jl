@@ -8,7 +8,7 @@ export
 	RKHS,
 	BRR,
 	FixEff,
-	read_ped
+	read_bed
 
 import
 	Distributions.Normal,
