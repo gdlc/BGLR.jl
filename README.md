@@ -104,7 +104,7 @@ using Gadfly
   
 # Incidence matrix for sex (Male=1) and litter size
   male=(pheno[:,varnames.=="GENDER"].=="M").*1.0 ## dummy variable for male
-  litterSize=pheno[:,varnames.=="Litter"]
+  litterSize=model_matrix(pheno[:,varnames.=="Litter"])
   W=hcat(male, litterSize)
   
 
