@@ -19,8 +19,8 @@ import
 	ArrayViews.unsafe_view,
 	Base.LinAlg.scale 
 
+include("utils.jl")
 include("samplers.jl")
-include("util.jl")
 
 ##################################################################################################
 #Just the welcome function that will appear every time that your run the program
