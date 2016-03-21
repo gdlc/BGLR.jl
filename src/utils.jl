@@ -121,6 +121,7 @@ end
 #Testing
 #X=read_bed("mice.X.bed",1814,10346);
 
+##########################################################################################
 #model matrix for a factor using p-1 Dummy variables
 #where p is the number of levels
 
@@ -143,6 +144,7 @@ function model_matrix(x)
         X
 end
 
+##########################################################################################
 #This routine appends a textline to
 #to a file
 
@@ -160,21 +162,89 @@ function writeln(con, x, delim)
  flush(con)
 end
 
+##########################################################################################
+#function to get the levels of a factor
+function levels(x::Array{Int64,1})
+        sort(unique(x))
+end
+
+##########################################################################################
+#function to get the number of levels of a factor
+function nlevels(x::Array{Int64,1})
+        size(levels(x))[1]
+end
+
+##########################################################################################
+function renumber(x)
+     counts=table(x)
+     levels=counts[1]
+     nLevels=size(counts[1])[1]
+     n=size(x)[1]
+     z=int(zeros(n))
+     for i in 1:n
+        for j in 1:nLevels
+           if x[i]==levels[j]
+              z[i]=j
+           end
+        end 
+     end
+     return z
+end
+##########################################################################################
+function rep(x;each=0,times=0)
+
+        tmp=((each>0)&(times<=0))|((each<=0)&(times>0))
+        @assert  tmp "One and only one of \{'each'} or 'times' must be positive"
+
+        nX=length(x)
+
+        if(times>0)
+                nZ=nX*times
+                z=Array(typeof(x[1]),nZ)
+                for i in 1:times
+                        z[((i-1)*nX+1):(i*nX)]=x
+                end
+        else
+                nZ=nX*each
+                z=Array(typeof(x[1]),nZ)
+                for i in 1:length(x)
+                        z[((i-1)*each+1):(i*each)]=x[i]
+
+                end
+        end
+
+        return z
+end
+
+##########################################################################################
+#### Frequency table #####################################################################
+#The function returns the counts
+#The first component of the output corresponds to the levels of x,
+#The second component of the output corresponds to the actual counts
+
+function table(x::Array{Int64})
+   n=length(x)
+   counts=cell(2)
+   labels=sort(unique(x))
+   counts[1]=labels
+   nGroups=length(labels)
+   counts[2]=fill(0,nGroups)
+   for i in 1:nGroups
+         for j in 1:n
+            counts[2][i]=counts[2][i]+ifelse(x[j]==labels[i],1,0)
+         end
+   end
+   return counts
+end
+
+##########################################################################################
 #Function to compute the sum of squares of the entries of a vector
 
 function sumsq(x::Vector{Float64});
         return(sum(x.^2))
 end
 
-#function to get the levels of a factor
-function levels(x::Array{Int64,1})
-        sort(unique(x))
-end
-
-#function to get the number of levels of a factor
-function nlevels(x::Array{Int64,1})
-        size(levels(x))[1]
-end
+##########################################################################################
 
 #Sum of squares by column and by groups
 #It takes as argument a matrix
@@ -196,6 +266,7 @@ function sumsq_group(X::Array{Float64,2}, groups::Array{Int64,1})
         return(x2)
 end
 
+##########################################################################################
 
 function innersimd(x, y,n)
     s = 0.0
@@ -205,6 +276,7 @@ function innersimd(x, y,n)
     s
 end
 
+##########################################################################################
 
 function my_axpy!(a,x,y,n)
     @simd for i=1:n
@@ -212,6 +284,7 @@ function my_axpy!(a,x,y,n)
     end
 end
 
+##########################################################################################
 
 function scale(X::Array{Float64,2};center=true,scale=true)
     n,p=size(X)
@@ -223,4 +296,3 @@ function scale(X::Array{Float64,2};center=true,scale=true)
     end
         X
 end
-
