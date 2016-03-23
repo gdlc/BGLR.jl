@@ -134,7 +134,7 @@ plot(x=fm.y,
 ### Modeling heterogeneous error variances
 <div id="HV"/>
 
-``julia
+```julia
 
 #Heterogeneous variances
 
@@ -160,4 +160,4 @@ plot(x=fm.y,
      Guide.xlabel("y"),
      Guide.title("Observed vs predicted"))
 
-``
+```
