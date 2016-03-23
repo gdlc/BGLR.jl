@@ -149,15 +149,15 @@ using Gadfly
    ETA=Dict("mrk"=>BRR(X))
    
 #Grouping
-groups=vec(readdlm(joinpath(Pkg.dir(),"BGLR/data/wheat.groups.csv")));
-groups=convert(Array{Int64,1},groups)
+  groups=vec(readdlm(joinpath(Pkg.dir(),"BGLR/data/wheat.groups.csv")));
+  groups=convert(Array{Int64,1},groups)
 
-fm=bglr(y=y,ETA=ETA;groups=groups);
+  fm=bglr(y=y,ETA=ETA;groups=groups);
 
-plot(x=fm.y,
-     y=fm.yHat,
-     Guide.ylabel("yHat"),
-     Guide.xlabel("y"),
-     Guide.title("Observed vs predicted"))
+  plot(x=fm.y,
+       y=fm.yHat,
+       Guide.ylabel("yHat"),
+       Guide.xlabel("y"),
+       Guide.title("Observed vs predicted"))
 
 ```
