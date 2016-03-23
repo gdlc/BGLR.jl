@@ -151,7 +151,6 @@ plot(x=fm.y,
      Guide.xlabel("y"),
      Guide.title("Observed vs predicted"))
 
-
 #Test 2
 #Bayesian Ridge Regression
 predictor2=Dict("XMatrix"=>BRR(X))
@@ -319,8 +318,8 @@ X=read_bed("mice.X.bed",1814,10346);
 using BGLR
 using Gadfly
 
-#model matrix for a factor using k-1 Dummy variables
-#where k is the number of levels
+#model matrix for a factor using p-1 Dummy variables
+#where p is the number of levels
 
 function model_matrix(x)
 	
@@ -387,6 +386,32 @@ ETA=Dict("Fixed"=>FixEff(Fixed),
 
 
 fm=bglr(y=y,ETA=ETA);
+
+plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
+     
+     
+       
+#Heterogeneous variances
+
+using BGLR
+using Gadfly
+
+# Reading Data 
+   X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+   y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# Bayesian Ridge Regression
+   ETA=Dict("mrk"=>BRR(X))
+   
+#Sets for cross-validations
+groups=vec(readdlm(joinpath(Pkg.dir(),"BGLR/data/wheat.groups.csv")));
+groups=convert(Array{Int64,1},groups)
+
+fm=bglr(y=y,ETA=ETA;groups=groups);
 
 plot(x=fm.y,
      y=fm.yHat,
