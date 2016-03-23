@@ -110,18 +110,26 @@ end
 
 =# 
 
+
 function sample_beta_groups(n::Int64, p::Int64, X::Array{Float64,2}, x2::Array{Float64,2},
-                     	    b::Array{Float64,1}, error::Array{Float64,1}, varBj::Array{Float64,1},
+                     	    b::Array{Float64,1}, e::Array{Float64}, varBj::Float64,
                             varE::Array{Float64,1}, groups::Array{Int64,1}, nGroups::Int64)
 
 	rhs=zeros(nGroups)
 
 	for j in 1:p
+
+		#Variables initialization
 		bj=b[j]
-		xj=X[:,j]
+		#xj=X[:,j]
+		xj=unsafe_view(X, :, j)
 
 		c=0
 		sum_rhs=0
+
+		for k in 1:nGroups
+			rhs[k]=0
+		end
 
 		#rhs by group
 		for i in 1:n
@@ -133,12 +141,12 @@ function sample_beta_groups(n::Int64, p::Int64, X::Array{Float64,2}, x2::Array{F
 			c+=x2[k,j]/varE[k]
 		end
 		
-		c+=1.0/varBj[j]
+		c+=1.0/varBj
 		b[j]=sum_rhs/c + sqrt(1/c)*rand(Normal(0,1))
 
 		bj=bj-b[j]
 
-		axpy!(bj,X[:,j],error)
+		axpy!(bj,xj,e)
 
 	end
 end
