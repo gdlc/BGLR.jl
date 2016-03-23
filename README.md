@@ -153,6 +153,11 @@ using Gadfly
   groups=convert(Array{Int64,1},groups)
 
   fm=bglr(y=y,ETA=ETA;groups=groups);
+  
+  ## Retrieving estimates and predictions
+  fm.varE # posterior mean of error variance
+  fm.yHat # predictions
+  fm.ETA["mrk"].var # variance of the random effect
 
   plot(x=fm.y,
        y=fm.yHat,
