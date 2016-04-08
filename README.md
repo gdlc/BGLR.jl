@@ -28,7 +28,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
   * [Reproducing Kernel Hilbert Spaces Regression using BLGR-J]()
   * [Prediction in testing data sets]()
-  * [Modeling heterogeneous error variances]()
+  * [Modeling heterogeneous error variances](#HV)
   * [Modeling genetic by environment interactions using BGLR-J]()
   * [BGLR-J Utils (a collection of utilitary functions)]()
 
@@ -129,4 +129,40 @@ plot(x=fm.y,
      Guide.ylabel("yHat"),
      Guide.xlabel("y"),
      Guide.title("Observed vs predicted"))
+```
+
+### Modeling heterogeneous error variances
+<div id="HV"/>
+
+```julia
+
+#Heterogeneous variances
+
+using BGLR
+using Gadfly
+
+# Reading Data 
+   X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+   y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# Bayesian Ridge Regression
+   ETA=Dict("mrk"=>BRR(X))
+   
+#Grouping
+  groups=vec(readdlm(joinpath(Pkg.dir(),"BGLR/data/wheat.groups.csv")));
+  groups=convert(Array{Int64,1},groups)
+
+  fm=bglr(y=y,ETA=ETA;groups=groups);
+  
+  ## Retrieving estimates and predictions
+  fm.varE # posterior mean of error variance
+  fm.yHat # predictions
+  fm.ETA["mrk"].var # variance of the random effect
+
+  plot(x=fm.y,
+       y=fm.yHat,
+       Guide.ylabel("yHat"),
+       Guide.xlabel("y"),
+       Guide.title("Observed vs predicted"))
+
 ```
