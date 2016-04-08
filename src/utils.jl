@@ -156,7 +156,7 @@ function writeln(con, x, delim)
    end
    write(con,string(x[n]))
  else
-    write(con,string(x))
+    write(con,string(x[1]))
  end
  write(con,"\n")
  flush(con)

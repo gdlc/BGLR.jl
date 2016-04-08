@@ -1,5 +1,5 @@
 #Define the module BGLR
-#Last update March/22/2016
+#Last update April/8/2016
 
 module BGLR
 
@@ -503,11 +503,9 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
                         fm.varE[1]= SS/rand(Chisq(fm.df),1)[]
 		end
 
-		#FIXME: 
-		#For now I am not saving the samples
-		#if(fm.saveSamples)
-		#	writeln(fm.conVarE,fm.varE,"") 			
-		#end
+		if(fm.saveSamples)
+			writeln(fm.conVarE,fm.varE, "\t") 		
+		end
   			
   		## Updating error, yHat & yStar
   		fm.yHat=fm.yStar-fm.error
