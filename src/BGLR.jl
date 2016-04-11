@@ -34,7 +34,7 @@ function welcome()
   print("#                      Bayesian Generalized Linear Regression        #\n");
   print("#                      Gustavo de los Campos, gustavoc@msu.edu       #\n");
   print("#    .oooO     Oooo.   Paulino Perez Rodriguez, perpdgo@gmail.com    #\n");
-  print("#    (   )     (   )   March, 2016                                   #\n");
+  print("#    (   )     (   )   April, 2016                                   #\n");
   print("#_____\\ (_______) /_________________________________________________ #\n");
   print("#      \\_)     (_/                                                   #\n");
   print("#                                                                    #\n");
@@ -76,9 +76,12 @@ type BGLRt
   df0::Float64
   S0::Float64
   df::Float64
-  post_varE::Float64
-  post_varE2::Float64
-  post_SDVarE::Float64
+  #post_varE::Float64
+  post_varE::Array{Float64,1} #It is an array because we can have different variances by group
+  #post_varE2::Float64
+  post_varE2::Array{Float64,1} #It is an array because we can have different variances by group
+  #post_SDVarE::Float64
+  post_SDVarE::Array{Float64,1} #It is an array because we can have different variances by group
   updateMeans::Bool
   saveSamples::Bool
   conVarE::IOStream
@@ -435,7 +438,7 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
    fm=BGLRt(y,yStar,yHat,resid,zeros(n),zeros(n),zeros(n),
    	    naCode,hasNA,nNA,isNA,
    	    ETA,nIter,burnIn,thin,R2,verbose,
-            saveAt,n,VError.*(1-R2),df0,S0,df0+n,0,0,0,false,false,open(saveAt*"varE.dat","w+"))
+            saveAt,n,VError.*(1-R2),df0,S0,df0+n,zeros(nGroups),zeros(nGroups),zeros(nGroups),false,false,open(saveAt*"varE.dat","w+"))
               
    if (nIter>0)
    	for i in 1:nIter ## Sampler
@@ -514,16 +517,15 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 	  		fm.error[fm.isNA]=rand(Normal(0,sqrt(fm.varE)),fm.nNA)
   			fm.yStar[fm.isNA]=fm.yHat[fm.isNA]+fm.error[fm.isNA]
 		end
-  		
-		#FIXME
-		#This only works when we have a variance component for the error
+
+		
   		if(fm.updateMeans)
 			
-  			#fm.post_varE=fm.post_varE*k+fm.varE/nSums
-  			#fm.post_varE2=fm.post_varE2*k+(fm.varE^2)/nSums
+  			fm.post_varE=fm.post_varE*k+fm.varE/nSums
+  			fm.post_varE2=fm.post_varE2*k+(fm.varE.^2)/nSums
 
-  			#fm.post_yHat=fm.post_yHat*k+fm.yHat/nSums
-			#fm.post_yHat2=fm.post_yHat2*k+(fm.yHat.^2)/nSums
+  			fm.post_yHat=fm.post_yHat*k+fm.yHat/nSums
+			fm.post_yHat2=fm.post_yHat2*k+(fm.yHat.^2)/nSums
 
   		end
 		
