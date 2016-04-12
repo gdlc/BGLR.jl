@@ -55,27 +55,26 @@ end
         For BayesCpi, varBj=varB, j=1,...,p, varB is the variance common to all betas
         
  varE: residual variance
- minAbsBeta: in some cases values of betas near to zero can lead to numerical problems in BL, 
-             so, instead of using this tiny number we assingn them minAbsBeta
- 
+
 =#
 
 function sample_beta(n::Int64, p::Int64, X::Array{Float64,2},x2::Array{Float64,1},
                      b::Array{Float64,1},error::Array{Float64,1},varBj::Array{Float64,1},
-                     varE::Float64;minAbsBeta=1e-9)
+                     varE::Float64)
 
         for j in 1:p
                 bj=b[j]
-                rhs=dot(X[:,j],error)/varE
-                rhs+=x2[j]*b/fm.varE
-                c=x2[j]/varE + 1.0/varBj
+		xj=unsafe_view(X, :, j)
+                #rhs=dot(xj,error)/varE
+		#rhs+=x2[j]*bj/varE
+		rhs=(innersimd(xj,error,n)+x2[j]*bj)/varE
+                c=x2[j]/varE + 1.0/varBj[j]
                 b[j]=rhs/c+sqrt(1/c)*rand(Normal(0,1))
                 bj=bj-b[j]
-                axpy!(bj,X[:,j],error)
+		my_axpy!(bj,xj,error,n)
+                #axpy!(bj,xj,error)
         end
-
 end
-
 
 #=
  * This is a generic function to sample betas  when we have 

@@ -248,20 +248,26 @@ function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, save
 	=#
 
 	# Implementation using unsafe_view, @inbounds and @simd,  with a few improvements
-     
-	z=rand(Normal(0,sqrt(fm.varE[1])),fm.ETA[label].p)
-    	lambda=fm.varE[1]/fm.ETA[label].var
-    	rhs=0.0
-    	for j in 1:p         
-    		b=fm.ETA[label].effects[j] 
-    		SSX=fm.ETA[label].x2[1,j]
-		xj=unsafe_view(fm.ETA[label].X, :, j)
-		rhs=innersimd(xj,fm.error,fm.n)+SSX*b
-		CInv=1/(SSX + lambda)
-		fm.ETA[label].effects[j]=rhs*CInv+sqrt(CInv)*z[j]
-		tmp=b-fm.ETA[label].effects[j]
-		my_axpy!(tmp,xj,fm.error,fm.n)		
-	end	
+	#z=rand(Normal(0,sqrt(fm.varE[1])),p)
+    	#lambda=fm.varE[1]/fm.ETA[label].var
+	#x2=vec(fm.ETA[label].x2[1,:])
+    	#for j in 1:p         
+    	#	b=fm.ETA[label].effects[j] 
+	#	SSX=x2[j]
+	#	xj=unsafe_view(fm.ETA[label].X, :, j)
+	#	rhs=innersimd(xj,fm.error,n)+SSX*b
+	#	CInv=1/(SSX + lambda)
+	#	fm.ETA[label].effects[j]=rhs*CInv+sqrt(CInv)*z[j]
+	#	tmp=b-fm.ETA[label].effects[j]
+	#	my_axpy!(tmp,xj,fm.error,n)		
+	#end	
+
+	#Actually this implementation is faster that the one shown in previous lines!
+
+	sample_beta(n, p, fm.ETA[label].X, vec(fm.ETA[label].x2[1,:]),
+                    fm.ETA[label].effects,fm.error,rep(fm.ETA[label].var,each=p),
+		    fm.varE[1])
+
     
 	#Update the variance?, it will be true for BRR, but not for FixedEffects
 	if(fm.ETA[label].update_var)
