@@ -155,120 +155,64 @@ end
 # Routine for sampling coefficients for BayesCpi and BayesB
 #
 
-#SEXP sample_beta_BB_BCp(SEXP n, SEXP p, SEXP X, SEXP x2, SEXP b, SEXP d, SEXP error, SEXP varBj, SEXP varE, SEXP minAbsBeta, SEXP probInside)
-#
-#  int j,rows,cols;
-#  double sigma2e, probIn, logOdds,tmp,betaj;
-#  double logOddsPrior;
-#  double rhs,c;
-#  double dRSS, Xe;
-#  double *pX, *perror, *pb, *px2,*pvarBj;
-#  double *xj;
-#  int inc=1;
-#  double c1;
-#  int *pd;
-#  int change;
-#  SEXP list;
-#
-#  cols=INTEGER_VALUE(p);
-#  rows=INTEGER_VALUE(n);
-#  sigma2e=NUMERIC_VALUE(varE);
-#  probIn=NUMERIC_VALUE(probInside);
-#  logOddsPrior=log(probIn/(1-probIn));
-#
-#  PROTECT(X=AS_NUMERIC(X));
-#  pX=NUMERIC_POINTER(X);
-#
-#  PROTECT(x2=AS_NUMERIC(x2));
-#  px2=NUMERIC_POINTER(x2);
-#
-#
-#  PROTECT(d=AS_INTEGER(d));
-#  pd=INTEGER_POINTER(d);
-#
-#  PROTECT(b=AS_NUMERIC(b));
-#  pb=NUMERIC_POINTER(b);
-#
-#  PROTECT(error=AS_NUMERIC(error));
-#  perror=NUMERIC_POINTER(error);
-#
-#  PROTECT(varBj=AS_NUMERIC(varBj));
-#  pvarBj=NUMERIC_POINTER(varBj);
-#
-#  GetRNGstate();
-#
-#  // for clarity, maybe we need to use -1/2/sigma2e
-#  c1=-0.5/sigma2e;  
-#
-#  for(j=0; j<cols; j++)
-#  {
-#     xj=pX+j*rows;
-#     Xe=F77_NAME(ddot)(&rows,perror,&inc,xj,&inc);
-#
-#     if(pd[j])
-#     {
-#	//Indicator variable equal to one   [4]
-#       dRSS=-1*pb[j]*pb[j]*px2[j]-2*pb[j]*Xe;
-#     }else{
-#       //Indicator variable equal to zero [3]
-#       dRSS=pb[j]*pb[j]*px2[j]-2*pb[j]*Xe;
-#     }
-#
-#     logOdds=logOddsPrior+c1*(dRSS);
-# 
-#     tmp=1.0/(1.0+exp(-logOdds));// [1]
-#
-#     change=pd[j];
-#
-#     pd[j]=unif_rand()<tmp ? 1 : 0;
-#
-#     //Update residuals
-#     if(change!=pd[j])
-#     {
-#        if(pd[j]>change)// d=0 => d=1
-#        {
-#                betaj=-pb[j];
-#                F77_NAME(daxpy)(&rows, &betaj,xj,&inc, perror, &inc);
-#                Xe=F77_NAME(ddot)(&rows,perror,&inc,xj,&inc);
-#        }else{ // d=1 => d=0
-#                betaj=pb[j];
-#                F77_NAME(daxpy)(&rows, &betaj,xj,&inc, perror, &inc);
-#        }
-#     }
-#
-#     //Sample the coefficients
-#     if(pd[j]==0)
-#     {
-#        //Sample from the prior
-#        pb[j]=sqrt(pvarBj[j])*norm_rand();
-#     }else{
-#	   //Sampling from the conditional
-#           rhs=(px2[j]*pb[j] + Xe)/sigma2e;
-#           c=px2[j]/sigma2e + 1.0/pvarBj[j];
-#           tmp=rhs/c + sqrt(1.0/c)*norm_rand();
-#
-#           betaj=pb[j]-tmp;
-#           F77_NAME(daxpy)(&rows, &betaj,xj,&inc, perror, &inc);
-#           pb[j]=tmp;
-#     }
-#
-#  }
-#
-#  // Creating a list with 3 vector elements
-#  PROTECT(list = allocVector(VECSXP,3));
-#
-#  // attaching b vector to list
-#  SET_VECTOR_ELT(list, 0,d);
-#
-#  // attaching error vector to list
-#  SET_VECTOR_ELT(list, 1, error);
-#
-#  // attaching b to the list
-#  SET_VECTOR_ELT(list,2,b);
-#
-#  PutRNGstate();
-#
-#  UNPROTECT(7);
-#
-#  return(list);
-#
+function sample_beta_BB_BCp(n::Int64, p::Int64, X::Array{Float64,2}, x2::Array{Float64,1}, b::Array{Float64,1},
+		            d::Array{Int64,1},error::Array{Float64,1},varBj::Array{Float64,1},varE::Float64,
+			    probInside::Float64)
+
+	logOddsPrior=log(probInside/(1-probInside))
+
+        #for clarity, maybe we need to use -1/2/varE
+	c1=-0.5/varE
+
+	#for each covariate
+	for j in 1:p
+		xj=unsafe_view(X, :, j)
+		Xe=innersimd(xj,error,n)
+
+		if(d[j]==1)
+			#Indicator variable equal to one [4]
+			dRSS=-1*b[j]*b[j]*x2[j]-2*b[j]*Xe
+		else
+			#Indicator variable equal to zero [3]
+			dRSS=b[j]*b[j]*x2[j]-2*b[j]*Xe
+		end
+		
+		logOdds=logOddsPrior+c1*(dRSS)
+
+		tmp=1.0/(1.0+exp(-logOdds)) # [1]
+
+		change=d[j]
+
+		d[j]=rand(Uniform())<tmp ? 1:0
+		
+		#Update residuals
+
+		if(change!=d[j])
+			#d=0 => d=1
+			if(d[j]>change)
+				bj=-1.0*b[j]	
+				my_axpy!(bj,xj,error,n)
+				Xe=innersimd(xj,error,n)
+			else
+				bj=b[j]
+				my_axpy!(bj,xj,error,n)
+			end
+		end
+		
+		#Sample the coefficients
+		
+		if(d[j]==0)
+			#Sample from the prior
+			b[j]=sqrt(varBj[j])*rand(Normal())
+		else
+			#Sampling from the conditional
+			rhs=(x2[j]*b[j] + Xe)/varE
+			c=x2[j]/varE + 1.0/varBj[j]
+			tmp=rhs/c + sqrt(1.0/c)*rand(Normal())
+			
+			bj=b[j]-tmp
+			my_axpy!(bj,xj,error,n)
+			b[j]=tmp
+		end
+	end
+end
