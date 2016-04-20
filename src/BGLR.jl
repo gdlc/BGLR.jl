@@ -415,6 +415,22 @@ function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
         
 end
 
+function updateRandRegBL(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
+	p=fm.ETA[label].p
+	n=fm.ETA[label].n
+
+	#sample_beta(n, p, fm.ETA[label].X, vec(fm.ETA[label].x2[1,:]),
+        #            fm.ETA[label].effects,fm.error,rep(fm.ETA[label].var,each=p),
+	#	     fm.varE[1])
+
+	if(saveSamples)
+		if(updateMeans)
+
+		end
+	end
+	
+end
+
 function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=string(pwd(),"/"),verbose=true,df0=1,S0=-Inf,naCode= -999, groups="null")
    #y=rand(10);ETA=Dict();nIter=-1;R2=.5;burnIn=500;thin=5;path="";verbose=true;df0=0;S0=0;saveAt=pwd()*"/"
 
