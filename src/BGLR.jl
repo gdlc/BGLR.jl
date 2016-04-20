@@ -217,7 +217,7 @@ function BRR_post_init(LT::RandRegBRR, Vy::Float64, nLT::Int64, R2::Float64, has
 	end
 
 	if(LT.S0<0)
-		 #sumMaeanXSq 
+		 #sumMeanXSq 
         	 sumMeanXSq=0.0
         	 for j in 1:LT.p
                 	sumMeanXSq+=(mean(LT.X[:,j]))^2
@@ -343,6 +343,77 @@ function RKHS(;K="null",EVD="null",R2=-Inf,df0= -Inf,S0=-Inf,minEigValue=1e-7)
 
 end
 
+##Linear Term: BL
+#The well known Bayesian LASSO (Park and Casella, 2008) and 
+#de los Campos et al (2009)
+
+type RandRegBL  #Bayesian LASSO
+  name::ASCIIString
+  n::Int64 #Number of individuals
+  p::Int64 #Number of covariates
+  X::Array{Float64,2} #Incidence matrix
+  x2::Array{Float64,1} #Sum of the squares of the columns of X
+  effects::Array{Float64,1} #b
+  eta::Array{Float64,1} #X*b
+  R2::Float64
+  lambda::Float64
+  lambda_type::ASCIIString #Possible values are "gamma", "beta", "FIXED"
+  post_effects::Array{Float64,1}
+  post_effects2::Array{Float64,1}
+  post_SD_effects::Array{Float64,1}
+  post_eta::Array{Float64,1} #posterior mean of linear term
+  post_eta2::Array{Float64,1} #posterior mean of the linear term squared
+  post_SD_eta::Array{Float64,1} #posterior SD of the linear term
+  fname::ASCIIString
+  con::streamOrASCIIString #a connection where samples will be saved
+  nSums::Int64
+  k::Float64	
+end
+
+#Function to setup RandReg
+#when the prior for the coefficients is Double Exponential or Laplace
+
+function BL(X::Array{Float64,2};R2=-Inf, lambda_type="gamma", shape=-Inf, rate=-Inf)
+	n,p=size(X)  #sample size and number of predictors
+	#return RandRegBL()
+end
+
+function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
+
+	#The sum of squares of columns of X
+	for j in 1:LT.p
+	    LT.x2[j]=sum(LT.X[:,j].^2)
+	end
+
+	#Prior
+	
+	if(LT.R2<0)
+	  	LT.R2=R2/nLT 
+	end
+
+        #sumMeanXSq		
+	sumMeanXSq=0.0
+	for j in 1:LT.p
+		sumMeanXSq+=(mean(LT.X[:,j]))^2
+	end
+
+	MSx=sum(LT.x2)/LT.n=sumMeanXSq
+
+	warn("By default, the prior density of lambda^2 in the LP was set to ", LT.lambda_type,"\n")
+
+	if(LT.lambda_type=="gamma")
+		if(LT.shape<0)	
+			LT.shape=1.1
+			warn("shape parameter in LP was missing and was set to ",LT.shape,"\n")
+		end
+
+		if(LT.rate<0)
+			LT.rate=(LT.shape-1)/LT.lambda2
+			warn("warn predictor in LP was missing and was set to ",LT.rate,"\n")
+		end
+	end
+        
+end
 
 function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=string(pwd(),"/"),verbose=true,df0=1,S0=-Inf,naCode= -999, groups="null")
    #y=rand(10);ETA=Dict();nIter=-1;R2=.5;burnIn=500;thin=5;path="";verbose=true;df0=0;S0=0;saveAt=pwd()*"/"
