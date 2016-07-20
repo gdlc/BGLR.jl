@@ -357,6 +357,7 @@ type RandRegBL  #Bayesian LASSO
   eta::Array{Float64,1} #X*b
   R2::Float64
   lambda::Float64
+  lambda2::Float64
   lambda_type::ASCIIString #Possible values are "gamma", "beta", "FIXED"
   post_effects::Array{Float64,1}
   post_effects2::Array{Float64,1}
@@ -373,9 +374,9 @@ end
 #Function to setup RandReg
 #when the prior for the coefficients is Double Exponential or Laplace
 
-function BL(X::Array{Float64,2};R2=-Inf, lambda_type="gamma", shape=-Inf, rate=-Inf)
+function BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf)
 	n,p=size(X)  #sample size and number of predictors
-	#return RandRegBL()
+	#return RandRegBL("BL",n,p,X,)
 end
 
 function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
@@ -397,9 +398,17 @@ function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
 		sumMeanXSq+=(mean(LT.X[:,j]))^2
 	end
 
-	MSx=sum(LT.x2)/LT.n=sumMeanXSq
+	MSx=sum(LT.x2)/LT.n-sumMeanXSq
 
 	warn("By default, the prior density of lambda^2 in the LP was set to ", LT.lambda_type,"\n")
+
+	if(LT.lambda<0)
+	   LT.lambda2=2*(1-R2)/(LT.R2)*MSx
+	   LT.lambda=sqrt(LT.lambda2)
+	   warn("Initial value of lambda in LP was set to default value ", LT.lambda,"\n")
+	else
+	  LT.lambda2=LT.lambda^2	
+	end	
 
 	if(LT.lambda_type=="gamma")
 		if(LT.shape<0)	
@@ -411,6 +420,10 @@ function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
 			LT.rate=(LT.shape-1)/LT.lambda2
 			warn("warn predictor in LP was missing and was set to ",LT.rate,"\n")
 		end
+	end
+
+	if(LT.lambda_type=="beta")
+		#Add your magic code here
 	end
         
 end
