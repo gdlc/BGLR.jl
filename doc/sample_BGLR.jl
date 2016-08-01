@@ -418,3 +418,112 @@ plot(x=fm.y,
      Guide.ylabel("yHat"),
      Guide.xlabel("y"),
      Guide.title("Observed vs predicted"))
+
+
+#Reproducing Kernel Hilbert Spaces
+#Single kernel methods
+#Example 4 of BGLR paper
+#Box 10
+
+using BGLR
+using Distances
+using Gadfly
+
+# Reading Data 
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+  
+#Computing the distance matrix and then the kernel
+#pairwise function computes distance between columns, so we transpose
+#the matrix to get distance between rows of X
+  n,p=size(X);
+  X=scale(X);
+  D=pairwise(Euclidean(),X');
+  D=(D.^2)./p;
+  h=0.25;
+  K1=exp(-h.*D);
+  
+# Kernel regression
+  ETA=Dict("mrk"=>RKHS(K=K1));
+  fm=bglr(y=y,ETA=ETA);
+  
+#Plots
+	plot(x=fm.y,
+     	 y=fm.yHat,
+         Guide.ylabel("yHat"),
+         Guide.xlabel("y"),
+         Guide.title("Observed vs predicted"))
+
+## Retrieving estimates and predictions
+  fm.varE # posterior mean of error variance
+  fm.yHat # predictions
+  fm.ETA["mrk"].var # variance of the random effect
+  
+
+library(BGLR)
+data(wheat)
+set.seed(123)
+Y=wheat.Y
+X=wheat.X
+n=nrow(X)
+p=ncol(X)
+y=Y[,1]
+X=scale(X,center=TRUE,scale=TRUE)
+D=(as.matrix(dist(X,method="euclidean"))^2)/p
+h=0.25
+K=exp(-h*D)
+
+
+#Reproducing Kernel Hilbert Spaces
+#Multi kernel methods (Kernel Averaging)
+#Example 5 of BGLR paper
+#Box 11
+
+using BGLR
+using Distances
+using Gadfly
+
+# Reading Data 
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+  
+#Computing the distance matrix and then the kernel
+#pairwise function computes distance between columns, so we transpose
+#the matrix to get distance between rows of X
+  n,p=size(X);
+  X=scale(X);
+  D=pairwise(Euclidean(),X');
+  D=(D.^2)./p;
+  
+  d=reshape(tril(D),n*n,1);
+  d=d[d.>0];
+  h=1/median(d);
+  h=h.*[1/5,1,5];
+  
+  K1=exp(-h[1].*D);
+  K2=exp(-h[2].*D);
+  K3=exp(-h[3].*D);
+  
+# Kernel regression
+  ETA=Dict("Kernel1"=>RKHS(K=K1),
+           "Kernel2"=>RKHS(K=K2),
+           "Kernel3"=>RKHS(K=K3));
+  fm=bglr(y=y,ETA=ETA);
+  
+#Plots
+	plot(x=fm.y,
+     	 y=fm.yHat,
+         Guide.ylabel("yHat"),
+         Guide.xlabel("y"),
+         Guide.title("Observed vs predicted"))
+
+## Retrieving estimates and predictions
+  fm.varE # posterior mean of error variance
+  fm.yHat # predictions
+  fm.ETA["Kernel1"].var # variance of the random effect
+  fm.ETA["Kernel2"].var # variance of the random effect
+  fm.ETA["Kernel3"].var # variance of the random effect
