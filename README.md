@@ -136,6 +136,9 @@ plot(x=fm.y,
 ```julia
 #Reproducing Kernel Hilbert Spaces
 #Single kernel methods
+#Example 4 of BGLR paper
+#Box 10
+
 
 using BGLR
 using Distances
