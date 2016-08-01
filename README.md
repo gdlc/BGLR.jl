@@ -26,7 +26,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Genomic BLUP using BLGR-Julia](#GBLUP)
   * [Parametric Shrinkage and Variable Selection](#BRR)
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
-  * [Reproducing Kernel Hilbert Spaces Regression using BLGR-J]()
+  * [Reproducing Kernel Hilbert Spaces Regression using BLGR-J](#RKHS)
   * [Prediction in testing data sets]()
   * [Modeling heterogeneous error variances](#HV)
   * [Modeling genetic by environment interactions using BGLR-J]()
@@ -130,6 +130,50 @@ plot(x=fm.y,
      Guide.xlabel("y"),
      Guide.title("Observed vs predicted"))
 ```
+
+### Reproducing Kernel Hilbert Spaces Regression using BLGR-J
+<div id="RKHS" />
+```julia
+#Reproducing Kernel Hilbert Spaces
+#Single kernel methods
+
+using BGLR
+using Distances
+using Gadfly
+
+# Reading Data 
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+  
+#Computing the distance matrix and then the kernel
+#pairwise function computes distance between columns, so we transpose
+#the matrix to get distance between rows of X
+  n,p=size(X);
+  X=scale(X);
+  D=pairwise(Euclidean(),X');
+  D=(D.^2)./p;
+  h=0.25;
+  K1=exp(-h.*D);
+  
+# Kernel regression
+  ETA=Dict("mrk"=>RKHS(K=K1));
+  fm=bglr(y=y,ETA=ETA);
+  
+#Plots
+	plot(x=fm.y,
+     	 y=fm.yHat,
+         Guide.ylabel("yHat"),
+         Guide.xlabel("y"),
+         Guide.title("Observed vs predicted"))
+
+## Retrieving estimates and predictions
+  fm.varE # posterior mean of error variance
+  fm.yHat # predictions
+  fm.ETA["mrk"].var # variance of the random effect
+```
+
 
 ### Modeling heterogeneous error variances
 <div id="HV"/>
