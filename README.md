@@ -23,16 +23,16 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 ```
 
 #### Examples
-  * [Genomic BLUP using BLGR-Julia](#GBLUP)
+  * [Genomic BLUP](#GBLUP)
   * [Parametric Shrinkage and Variable Selection](#BRR)
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
-  * [Reproducing Kernel Hilbert Spaces Regression using BLGR-J](#RKHS)
+  * [Reproducing Kernel Hilbert Spaces Regression](#RKHS)
   * [Prediction in testing data sets]()
   * [Modeling heterogeneous error variances](#HV)
-  * [Modeling genetic by environment interactions using BGLR-J]()
+  * [Modeling genetic by environment interactions]()
   * [BGLR-J Utils (a collection of utilitary functions)]()
 
-### Genomic BLUP using BGLR-julia
+### Genomic BLUP
 <div id="GBLUP" />
 ```julia
  using BGLR
@@ -131,7 +131,7 @@ plot(x=fm.y,
      Guide.title("Observed vs predicted"))
 ```
 
-### Reproducing Kernel Hilbert Spaces Regression using BLGR-J
+### Reproducing Kernel Hilbert Spaces Regression with single Kernel methods
 <div id="RKHS" />
 ```julia
 #Reproducing Kernel Hilbert Spaces
