@@ -9,7 +9,8 @@ export
 	BRR,
 	FixEff,
 	read_bed,
-	model_matrix
+	model_matrix,
+	rep
 
 import
 	Distributions.Normal,

@@ -527,3 +527,17 @@ using Gadfly
   fm.ETA["Kernel1"].var # variance of the random effect
   fm.ETA["Kernel2"].var # variance of the random effect
   fm.ETA["Kernel3"].var # variance of the random effect
+
+#Genotype x Environment interaction
+#Rection norm model based on markers
+using BGLR
+using Gadfly
+
+# Reading Data
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  Y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1];
+
+  
+
