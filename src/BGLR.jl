@@ -621,8 +621,12 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
   		fm.yHat=fm.yStar-fm.error
   		  		
   		if(hasNA)
-	  		fm.error[fm.isNA]=rand(Normal(0,sqrt(fm.varE)),fm.nNA)
-  			fm.yStar[fm.isNA]=fm.yHat[fm.isNA]+fm.error[fm.isNA]
+			if(nGroups>1)
+				println("Missing values for groups not supported yet!")
+			else
+	  			fm.error[fm.isNA]=rand(Normal(0,sqrt(fm.varE[1])),fm.nNA)
+  				fm.yStar[fm.isNA]=fm.yHat[fm.isNA]+fm.error[fm.isNA]
+			end
 		end
 
 		
