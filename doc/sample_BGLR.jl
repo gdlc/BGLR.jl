@@ -545,7 +545,10 @@ using Gadfly
   y=vec(Y);
   
  #Environments
-  Env=[rep(1;times=n),rep(2;times=n),rep(3;times=n),rep(4,times=599)];
+  Env=[rep(1;times=n);rep(2;times=n);rep(3;times=n);rep(4,times=599)];
+
+ #genotypes
+  g=[1:n;1:n;1:n;1:n]
   
  #Genomic relationship matrix 
   X=scale(X);
@@ -553,6 +556,30 @@ using Gadfly
   G=G./p;
  
  #Model matrix for environments
-  ZE=model_matrix(Env)
+  Ze=model_matrix(Env;intercept=false);
 
-  
+ #Model matrix for genotypes
+ #in this case is identity because the data is already ordered
+  Zg=model_matrix(g;intercept=false);
+
+ #Basic reaction norm model
+ #y=Ze*beta_Env+X*beta_markers+u, where u~N(0,(Zg*G*Zg')#ZeZe')
+
+ #Variance covariance matrix for the interaction
+ K1=(Zg*G*Zg').*(Ze*Ze');
+
+ #Linear predictor
+  ETA=Dict("Env"=>BRR(Ze),
+           "Mrk"=>BRR(X),
+           "GxE"=>RKHS(K=K1));
+
+ #Fitting the model
+  fm=bglr(y=y,ETA=ETA);
+
+
+ plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
+

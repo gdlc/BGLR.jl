@@ -30,7 +30,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging](#RKHS-KA)
   * [Prediction in testing data sets]()
   * [Modeling heterogeneous error variances](#HV)
-  * [Modeling genetic by environment interactions]()
+  * [Modeling genetic by environment interactions](#GxE)
   * [BGLR-J Utils (a collection of utilitary functions)]()
 
 ### Genomic BLUP
@@ -103,14 +103,14 @@ using Gadfly
   y=convert(Array{Float64,1}, vec(y))
   
   
-# Incidence matrix for sex (Male=1) and litter size
-  male=(pheno[:,varnames.=="GENDER"].=="M").*1.0 ## dummy variable for male
-  litterSize=model_matrix(pheno[:,varnames.=="Litter"])
+# Incidence matrix for sex and litter size using a dummy variable for each level
+  male=model_matrix(pheno[:,varnames.=="GENDER"];intercept=false)
+  litterSize=model_matrix(pheno[:,varnames.=="Litter"];intercept=false)
   W=hcat(male, litterSize)
   
 
-# Incidence matrix for cage
-  Z=model_matrix(pheno[:,varnames.=="cage"])
+# Incidence matrix for cage, using a dummy variable for each level
+  Z=model_matrix(pheno[:,varnames.=="cage"];intercept=false)
 
 
 #Relationship matrix derived from pedigree
@@ -268,5 +268,66 @@ using Gadfly
        Guide.ylabel("yHat"),
        Guide.xlabel("y"),
        Guide.title("Observed vs predicted"))
+
+```
+
+### Modeling genetic by environment interactions
+<div id="GxE"/>
+```julia
+
+#Genotype x Environment interaction
+#Rection norm model based on markers
+using BGLR
+using Gadfly
+
+# Reading Data
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  Y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1];
+
+  n,p=size(X);
+
+ #response vector
+  y=vec(Y);
+
+ #Environments
+  Env=[rep(1;times=n);rep(2;times=n);rep(3;times=n);rep(4,times=599)];
+
+ #genotypes
+  g=[1:n;1:n;1:n;1:n]
+
+ #Genomic relationship matrix
+  X=scale(X);
+  G=X*X';
+  G=G./p;
+
+ #Model matrix for environments
+  Ze=model_matrix(Env;intercept=false);
+
+ #Model matrix for genotypes
+ #in this case is identity because the data is already ordered
+  Zg=model_matrix(g;intercept=false);
+
+ #Basic reaction norm model
+ #y=Ze*beta_Env+X*beta_markers+u, where u~N(0,(Zg*G*Zg')#ZeZe')
+
+ #Variance covariance matrix for the interaction
+ K1=(Zg*G*Zg').*(Ze*Ze');
+
+ #Linear predictor
+  ETA=Dict("Env"=>BRR(Ze),
+           "Mrk"=>BRR(X),
+           "GxE"=>RKHS(K=K1));
+
+ #Fitting the model
+  fm=bglr(y=y,ETA=ETA);
+
+
+ plot(x=fm.y,
+     y=fm.yHat,
+     Guide.ylabel("yHat"),
+     Guide.xlabel("y"),
+     Guide.title("Observed vs predicted"))
 
 ```
