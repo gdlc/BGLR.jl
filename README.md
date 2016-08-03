@@ -28,7 +28,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
   * [Reproducing Kernel Hilbert Spaces Regression with single Kernel methods](#RKHS)
   * [Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging](#RKHS-KA)
-  * [Prediction in testing data sets](Trn-Tst)
+  * [Prediction in testing data sets](#Trn-Tst)
   * [Modeling heterogeneous error variances](#HV)
   * [Modeling genetic by environment interactions](#GxE)
   * [BGLR-J Utils (a collection of utilitary functions)](#Utils)
@@ -235,7 +235,7 @@ using Gadfly
 ```
 
 ### Prediction in testing data sets
-<div id="TRN-TST">
+<div id="Trn-Tst">
 ```julia
 
 #Assesment of prediction accuracy using a single training-testing partition
