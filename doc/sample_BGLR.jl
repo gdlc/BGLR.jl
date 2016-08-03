@@ -639,15 +639,39 @@ using StatsBase
  #Phenotypes
   y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
 
+ #Relationship matrix derived from pedigree
+  A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true);
+  A=A[1]; #The first component of the Tuple
+
+# Simulation parameters
+  srand(123);
+  nTST=150;
+  nRep=100;
+  nIter=12000;
+  burnIn=2000; 
+
 # Computing G-Matrix
   n,p=size(X);
   X=scale(X);
   G=X*X';
   G=G./p;
 
-#Creating a Testing set
- yNA=deepcopy(y)
- srand(456);
- tst=sample([1:n],100;replace=false)
- yNA[tst]=-999
+# Setting the linear predictors
+  H0=Dict("PED"=>RKHS(K=A));
+  HA=Dict("PED"=>RKHS(K=A),
+          "MRK"=>RKHS(K=G));
 
+  COR=zeros(nRep,2);
+
+# Loop over TRN-TST partitions
+  for i in 1:nIter
+    tst=sample([1:n],nTST;replace=false)
+    yNA=deepcopy(y)
+    yNA[tst]=-999
+    fm=bglr(y=yNA,ETA=H0;nIter=nIter,burnIn=burnIn);
+    COR[i,1]=cor(fm.yHat[tst],y[tst]);
+    fm=0;
+    fm=bglr(y=yNA,ETA=HA;nIter=nIter,burnIn=burnIn);
+    COR[i,2]=cor(fm.yHat[tst],y[tst]);
+    fm=0;
+  end
