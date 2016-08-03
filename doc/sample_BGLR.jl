@@ -539,5 +539,20 @@ using Gadfly
  #Phenotypes
   Y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1];
 
+  n,p=size(X);
+ 
+ #response vector 
+  y=vec(Y);
   
+ #Environments
+  Env=[rep(1;times=n),rep(2;times=n),rep(3;times=n),rep(4,times=599)];
+  
+ #Genomic relationship matrix 
+  X=scale(X);
+  G=X*X';
+  G=G./p;
+ 
+ #Model matrix for environments
+  ZE=model_matrix(Env)
 
+  

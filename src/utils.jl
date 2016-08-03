@@ -122,10 +122,12 @@ end
 #X=read_bed("mice.X.bed",1814,10346);
 
 ##########################################################################################
-#model matrix for a factor using p-1 Dummy variables
+#model matrix for a factor using dummy variables
+#if intercept=true, use p-1 dummy variables
+#if intercept=false, use p dummy variables
 #where p is the number of levels
 
-function model_matrix(x)
+function model_matrix(x;intercept=true)
         levels=sort(unique(x))
         n=size(x)[1]
         p=size(levels)[1]
@@ -134,13 +136,20 @@ function model_matrix(x)
                 error("The factor should have at least 2 levels")
         end
 
-        X=zeros(n,p-1)
+        X=zeros(n,p)
 
-        for j in 2:p
-                index=(x.==levels[j])
-                X[index,j-1]=1
-        end
-
+	if(intercept)
+		X[:,1]=1
+        	for j in 2:p
+                	index=(x.==levels[j])
+                	X[index,j]=1
+        	end
+	else
+		for j in 1:p
+			index=(x.==levels[j])
+			X[index,j]=1
+		end
+	end
         X
 end
 
