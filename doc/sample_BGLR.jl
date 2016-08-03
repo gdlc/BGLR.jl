@@ -621,7 +621,7 @@ using Gadfly
  rtrn
 
  plot(layer(x=y[trn],
-            y=fm.yHat[trn],Geom.point,Theme(default_color=color("black"))),
+            y=fm.yHat[trn],Geom.point,Theme(default_color=color("blue"))),
       layer(x=y[tst],y=fm.yHat[tst],Geom.point,Theme(default_color=color("red"))),
       Guide.ylabel("yHat"),
       Guide.xlabel("y"),
