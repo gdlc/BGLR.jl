@@ -282,7 +282,7 @@ using Gadfly
       Guide.title("Observed vs predicted"))
 
 ```
-<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig5.png" width="500">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig5.png" width="800">
 
 ### Modeling heterogeneous error variances
 <div id="HV"/>
