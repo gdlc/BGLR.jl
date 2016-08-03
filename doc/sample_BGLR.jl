@@ -584,11 +584,11 @@ using Gadfly
      Guide.title("Observed vs predicted"))
 
 
-#Assesment of prediction acciracy using a single training-testing partition
+#Assesment of prediction accuracy using a single training-testing partition
 #Box 12 in BGLR package
 using BGLR
 using StatsBase
-
+using Gadfly
 
 # Reading Data 
  #Markers
@@ -604,7 +604,7 @@ using StatsBase
 
 #Creating a Testing set
  yNA=deepcopy(y)
- srand(123);
+ srand(456);
  tst=sample([1:n],100;replace=false)
  yNA[tst]=-999
 
@@ -612,4 +612,42 @@ using StatsBase
  ETA=Dict("mrk"=>RKHS(K=G))
  
  fm=bglr(y=yNA,ETA=ETA;nIter=5000,burnIn=1000);
+
+#Correlation in training and testing sets
+ trn=(yNA.!=-999);
+ rtst=cor(fm.yHat[tst],y[tst]);
+ rtrn=cor(fm.yHat[trn],y[trn]);
+ rtst
+ rtrn
+
+ plot(layer(x=y[trn],
+            y=fm.yHat[trn],Geom.point,Theme(default_color=color("black"))),
+      layer(x=y[tst],y=fm.yHat[tst],Geom.point,Theme(default_color=color("red"))),
+      Guide.ylabel("yHat"),
+      Guide.xlabel("y"),
+      Guide.title("Observed vs predicted"))
+
+
+#Assesment of prediction accuracy using a single training-testing partition
+#Box 13 in BGLR package
+using BGLR
+using StatsBase
+
+# Reading Data
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# Computing G-Matrix
+  n,p=size(X);
+  X=scale(X);
+  G=X*X';
+  G=G./p;
+
+#Creating a Testing set
+ yNA=deepcopy(y)
+ srand(456);
+ tst=sample([1:n],100;replace=false)
+ yNA[tst]=-999
 

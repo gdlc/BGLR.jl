@@ -28,7 +28,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
   * [Reproducing Kernel Hilbert Spaces Regression with single Kernel methods](#RKHS)
   * [Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging](#RKHS-KA)
-  * [Prediction in testing data sets]()
+  * [Prediction in testing data sets](Trn-Tst)
   * [Modeling heterogeneous error variances](#HV)
   * [Modeling genetic by environment interactions](#GxE)
   * [BGLR-J Utils (a collection of utilitary functions)](#Utils)
@@ -234,6 +234,54 @@ using Gadfly
   fm.ETA["Kernel3"].var # variance of the random effect
 ```
 
+### Prediction in testing data sets
+<div id="TRN-TST">
+```julia
+
+#Assesment of prediction accuracy using a single training-testing partition
+#Box 12 in BGLR package
+using BGLR
+using StatsBase
+using Gadfly
+
+# Reading Data
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# Computing G-Matrix
+  n,p=size(X);
+  X=scale(X);
+  G=X*X';
+  G=G./p;
+
+#Creating a Testing set
+ yNA=deepcopy(y)
+ srand(456);
+ tst=sample([1:n],100;replace=false)
+ yNA[tst]=-999
+
+#Fitting the model
+ ETA=Dict("mrk"=>RKHS(K=G))
+
+ fm=bglr(y=yNA,ETA=ETA;nIter=5000,burnIn=1000);
+
+#Correlation in training and testing sets
+ trn=(yNA.!=-999);
+ rtst=cor(fm.yHat[tst],y[tst]);
+ rtrn=cor(fm.yHat[trn],y[trn]);
+ rtst
+ rtrn
+
+ plot(layer(x=y[trn],
+            y=fm.yHat[trn],Geom.point,Theme(default_color=color("black"))),
+      layer(x=y[tst],y=fm.yHat[tst],Geom.point,Theme(default_color=color("red"))),
+      Guide.ylabel("yHat"),
+      Guide.xlabel("y"),
+      Guide.title("Observed vs predicted"))
+
+```
 
 ### Modeling heterogeneous error variances
 <div id="HV"/>
