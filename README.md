@@ -89,7 +89,8 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 
 ```julia
 ##########################################################################################
-# Example xxx of 
+# Example 2 of  BGLR
+# Box 8
 ##########################################################################################
 
 using BGLR
