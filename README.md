@@ -31,7 +31,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Prediction in testing data sets]()
   * [Modeling heterogeneous error variances](#HV)
   * [Modeling genetic by environment interactions](#GxE)
-  * [BGLR-J Utils (a collection of utilitary functions)]()
+  * [BGLR-J Utils (a collection of utilitary functions)](#Utils)
 
 ### Genomic BLUP
 <div id="GBLUP" />
@@ -331,3 +331,20 @@ using Gadfly
      Guide.title("Observed vs predicted"))
 
 ```
+
+### BGLR-J Utils (a collection of utilitary functions)
+<div id="Utils" />
+
+-[model_matrix]
+-[read_bed]
+-[writeln]
+-[levels]
+-[nlevels]
+-[renumber]
+-[rep]
+-[table]
+-[sumsq]
+-[sumsq_group]
+-[innersimd]
+-[my_axpy!]
+-[scale]
