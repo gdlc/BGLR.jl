@@ -28,7 +28,8 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
   * [Reproducing Kernel Hilbert Spaces Regression with single Kernel methods](#RKHS)
   * [Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging](#RKHS-KA)
-  * [Prediction in testing data sets](#Trn-Tst)
+  * [Prediction in testing data sets using a single training-testing partition](#Trn-Tst1)
+  * [Prediction in testing data sets based on multiple training-testing partitions](#Trn-Tst2)
   * [Modeling heterogeneous error variances](#HV)
   * [Modeling genetic by environment interactions](#GxE)
   * [BGLR-J Utils (a collection of utilitary functions)](#Utils)
@@ -235,8 +236,8 @@ using Gadfly
   fm.ETA["Kernel3"].var # variance of the random effect
 ```
 
-### Prediction in testing data sets
-<div id="Trn-Tst">
+### Prediction in testing data sets using a single training-testing partition
+<div id="Trn-Tst1">
 ```julia
 
 #Assesment of prediction accuracy using a single training-testing partition
@@ -284,6 +285,77 @@ using Gadfly
 
 ```
 <img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig5.png" width="800">
+
+### Prediction in testing data sets based on multiple training-testing partitions
+<div id="Trn-Tst2">
+
+```julia
+
+#Assesment of prediction accuracy using multiple training-testing partition
+#Box 13 in BGLR package
+using BGLR
+using StatsBase
+using Gadfly
+
+# Reading Data
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+ #Relationship matrix derived from pedigree
+  A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true);
+  A=A[1]; #The first component of the Tuple
+
+# Simulation parameters
+  srand(123);
+  nTST=150;
+  nRep=100;
+  nIter=12000;
+  burnIn=2000; 
+
+
+omputing G-Matrix
+  n,p=size(X);
+  X=scale(X);
+  G=X*X';
+  G=G./p;
+
+# Setting the linear predictors
+#Very weird, if you run the model several times with different
+#missing value patterns and the same Dictionaries, the objects
+#become some how corrupted and then the variances are very high and the
+#predictions very bad!, but if you define the dictionary inside the call to
+#bglr function it works
+#  H0=Dict("PED"=>RKHS(K=A));
+#  HA=Dict("PED"=>RKHS(K=A),
+#          "MRK"=>RKHS(K=G));
+
+  COR=zeros(nRep,2);
+
+# Loop over TRN-TST partitions
+  for i in 1:nRep
+    println("i=",i)
+    tst=sample([1:n],nTST;replace=false)
+    yNA=deepcopy(y)
+    yNA[tst]=-999
+    fm=bglr(y=yNA,ETA=Dict("PED"=>RKHS(K=A));nIter=nIter,burnIn=burnIn);
+    COR[i,1]=cor(fm.yHat[tst],y[tst]);
+    fm=bglr(y=yNA,ETA=Dict("PED"=>RKHS(K=A),"MRK"=>RKHS(K=G));nIter=nIter,burnIn=burnIn);
+    COR[i,2]=cor(fm.yHat[tst],y[tst]);
+  end
+
+#Plots
+plot(layer(x=COR[:,1],y=COR[:,2],Geom.point,Theme(default_color=color("red"))),
+     layer(x=[0,0.6],y=[0,0.6],Geom.line,Theme(default_color=color("black"))),
+     Guide.xlabel("Pedigree"),
+     Guide.ylabel("Pedigree+Markers"),
+     Guide.title("E1"))
+
+```
+
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig6.png" width="800">
+
 
 ### Modeling heterogeneous error variances
 <div id="HV"/>

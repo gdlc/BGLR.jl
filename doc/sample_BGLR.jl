@@ -628,10 +628,11 @@ using Gadfly
       Guide.title("Observed vs predicted"))
 
 
-#Assesment of prediction accuracy using a single training-testing partition
+#Assesment of prediction accuracy using multiple training-testing partition
 #Box 13 in BGLR package
 using BGLR
 using StatsBase
+using Gadfly
 
 # Reading Data
  #Markers
@@ -657,21 +658,33 @@ using StatsBase
   G=G./p;
 
 # Setting the linear predictors
-  H0=Dict("PED"=>RKHS(K=A));
-  HA=Dict("PED"=>RKHS(K=A),
-          "MRK"=>RKHS(K=G));
+#Very weird, if you run the model several times with different 
+#missing value patterns and the same Dictionaries, the objects 
+#become some how corrupted and then the variances are very high and the 
+#predictions very bad!, but if you define the dictionary inside the call to
+#bglr function it works
+#  H0=Dict("PED"=>RKHS(K=A));
+#  HA=Dict("PED"=>RKHS(K=A),
+#          "MRK"=>RKHS(K=G));
 
   COR=zeros(nRep,2);
 
 # Loop over TRN-TST partitions
-  for i in 1:nIter
+  for i in 1:nRep
+    println("i=",i)
     tst=sample([1:n],nTST;replace=false)
     yNA=deepcopy(y)
     yNA[tst]=-999
-    fm=bglr(y=yNA,ETA=H0;nIter=nIter,burnIn=burnIn);
+    fm=bglr(y=yNA,ETA=Dict("PED"=>RKHS(K=A));nIter=nIter,burnIn=burnIn);
     COR[i,1]=cor(fm.yHat[tst],y[tst]);
-    fm=0;
-    fm=bglr(y=yNA,ETA=HA;nIter=nIter,burnIn=burnIn);
+    fm=bglr(y=yNA,ETA=Dict("PED"=>RKHS(K=A),"MRK"=>RKHS(K=G));nIter=nIter,burnIn=burnIn);
     COR[i,2]=cor(fm.yHat[tst],y[tst]);
-    fm=0;
   end
+
+#Plots
+plot(layer(x=COR[:,1],y=COR[:,2],Geom.point,Theme(default_color=color("red"))),
+     layer(x=[0,0.6],y=[0,0.6],Geom.line,Theme(default_color=color("black"))),
+     Guide.xlabel("Pedigree"),
+     Guide.ylabel("Pedigree+Markers"),
+     Guide.title("E1"))
+
