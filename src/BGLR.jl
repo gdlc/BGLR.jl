@@ -35,7 +35,7 @@ function welcome()
   print("#                      Bayesian Generalized Linear Regression        #\n");
   print("#                      Gustavo de los Campos, gustavoc@msu.edu       #\n");
   print("#    .oooO     Oooo.   Paulino Perez Rodriguez, perpdgo@gmail.com    #\n");
-  print("#    (   )     (   )   April, 2016                                   #\n");
+  print("#    (   )     (   )   Agust, 2016                                   #\n");
   print("#_____\\ (_______) /_________________________________________________ #\n");
   print("#      \\_)     (_/                                                   #\n");
   print("#                                                                    #\n");
@@ -360,6 +360,8 @@ type RandRegBL  #Bayesian LASSO
   lambda::Float64
   lambda2::Float64
   lambda_type::ASCIIString #Possible values are "gamma", "beta", "FIXED"
+  shape::Float64
+  rate::Float64
   post_effects::Array{Float64,1}
   post_effects2::Array{Float64,1}
   post_SD_effects::Array{Float64,1}
@@ -377,8 +379,11 @@ end
 
 function BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf)
 	n,p=size(X)  #sample size and number of predictors
-	#return RandRegBL("BL",n,p,X,)
+	return RandRegBL("BL",n,p,X,zeros(p),zeros(p),zeros(n),R2,lambda,lambda^2,lambda_type,shape,rate,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
 end
+
+#Example
+#BL(X)
 
 function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
 
@@ -426,7 +431,7 @@ function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
 	if(LT.lambda_type=="beta")
 		#Add your magic code here
 	end
-        
+
 end
 
 function updateRandRegBL(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
