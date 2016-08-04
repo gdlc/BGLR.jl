@@ -315,7 +315,7 @@ using Gadfly
   burnIn=2000; 
 
 
-omputing G-Matrix
+# Computing G-Matrix
   n,p=size(X);
   X=scale(X);
   G=X*X';
