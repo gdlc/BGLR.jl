@@ -1,5 +1,5 @@
 #Define the module BGLR
-#Last update April/8/2016
+#Last update Agust/4/2016
 
 module BGLR
 
@@ -7,6 +7,7 @@ export
 	bglr,
 	RKHS,
 	BRR,
+        BL,
 	FixEff,
 	read_bed,
 	model_matrix,
@@ -362,6 +363,7 @@ type RandRegBL  #Bayesian LASSO
   lambda_type::ASCIIString #Possible values are "gamma", "beta", "FIXED"
   shape::Float64
   rate::Float64
+  tau2::Array{Float64,1} #tau^2
   post_effects::Array{Float64,1}
   post_effects2::Array{Float64,1}
   post_SD_effects::Array{Float64,1}
@@ -379,7 +381,7 @@ end
 
 function BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf)
 	n,p=size(X)  #sample size and number of predictors
-	return RandRegBL("BL",n,p,X,zeros(p),zeros(p),zeros(n),R2,lambda,lambda^2,lambda_type,shape,rate,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+	return RandRegBL("BL",n,p,X,zeros(p),zeros(p),zeros(n),R2,lambda,lambda^2,lambda_type,shape,rate,zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
 end
 
 #Example
@@ -424,7 +426,7 @@ function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
 
 		if(LT.rate<0)
 			LT.rate=(LT.shape-1)/LT.lambda2
-			warn("warn predictor in LP was missing and was set to ",LT.rate,"\n")
+			warn("rate parameter in LP was missing and was set to ",LT.rate,"\n")
 		end
 	end
 
@@ -432,21 +434,27 @@ function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
 		#Add your magic code here
 	end
 
+	#Initial values for tau^2
+        LT.tau2=rep((Vy*R2/nLT)/MSx,each=LT.p)
 end
 
 function updateRandRegBL(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
 	p=fm.ETA[label].p
 	n=fm.ETA[label].n
 
-	#sample_beta(n, p, fm.ETA[label].X, vec(fm.ETA[label].x2[1,:]),
-        #            fm.ETA[label].effects,fm.error,rep(fm.ETA[label].var,each=p),
-	#	     fm.varE[1])
+	varBj=fm.ETA[label].tau2*fm.varE[1]
+
+	sample_beta(n, p, fm.ETA[label].X, fm.ETA[label].x2,
+                    fm.ETA[label].effects,fm.error, varBj,
+		    fm.varE[1])
 
 	if(saveSamples)
 		if(updateMeans)
 
 		end
 	end
+	
+	return fm
 	
 end
 
@@ -498,24 +506,33 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
    
    for term in ETA
         if(typeof(term[2])==INT ||
-	   typeof(term[2])==RandRegBRR)
+	   typeof(term[2])==RandRegBRR ||
+           typeof(term[2])==RandRegBL)
 
 		#Ridge Regression, RKHS, FIXED effects
 		if(typeof(term[2])==RandRegBRR)
 
 			if(nGroups>1)
-			  BRR_post_init(term[2], Vy, length(ETA)-1, R2, hasGroups,groups)
+			  	BRR_post_init(term[2], Vy, length(ETA)-1, R2, hasGroups,groups)
 			else
-			  BRR_post_init(term[2], Vy, length(ETA)-1, R2, hasGroups,[0])
+			  	BRR_post_init(term[2], Vy, length(ETA)-1, R2, hasGroups,[0])
 			end
 			
 			if(term[2].name=="FIXED")
 				term[2].var=1e10
 			end
 		end
+		
+		if(typeof(term[2])==RandRegBL)
+			if(nGroups>1)
+			   	error("Groups not supported for BL")
+			else
+				BL_post_init(term[2], Vy, length(ETA)-1, R2)
+			end
+		end
 			
               else 
-        	error("The elements of ETA must of type RandRegBRR or INT")
+        	error("The elements of ETA must of type RandRegBRR RandRegBL or INT")
 	      end
    end #end for    
 
@@ -531,7 +548,12 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 		#Add your magic code here
 		term[2].fname=string(saveAt,term[2].name,"_var.dat")
 	  end
-
+	
+	  if(typeof(term[2])==RandRegBL)
+	        #Add your magic code here
+		term[2].fname=string(saveAt,term[2].name,"_lambda.dat")
+	  end
+	  
 	  term[2].con=open(term[2].fname,"w+")
    end
    
@@ -602,7 +624,33 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 					fm=updateRandRegBRR(fm,term[1],fm.updateMeans,fm.saveSamples,nSums,k)
 
 				end
-			end	
+			end
+			
+			if(typeof(term[2])==RandRegBL)
+
+				#Groups are not allowed for BL
+
+                                #Update regression coefficients
+				fm=updateRandRegBL(fm, term[1], fm.updateMeans, fm.saveSamples, nSums, k)
+
+				#Update tau^2
+				nu=(sqrt(fm.varE[1])*fm.ETA[term[1]].lambda)./abs(fm.ETA[term[1]].effects)
+				for j=1:fm.ETA[term[1]].p
+					fm.ETA[term[1]].tau2[j]=1/rinvGauss(nu[j], fm.ETA[term[1]].lambda2)
+				end
+
+				#Update lambda
+			        if(fm.ETA[term[1]].lambda_type=="gamma")
+				  	#warn("Not updating lambda")
+			          	shape=fm.ETA[term[1]].p+fm.ETA[term[1]].shape
+                                  	rate=sum(fm.ETA[term[1]].tau2)/2+fm.ETA[term[1]].rate
+				  	fm.ETA[term[1]].lambda2=rand(Gamma(shape,1/rate))
+				  	fm.ETA[term[1]].lambda=sqrt(fm.ETA[term[1]].lambda2)
+				  	println("lambda=",round(fm.ETA[term[1]].lambda,2))
+				end
+                       
+			end
+	
   		end
 
   		## Updating error variance

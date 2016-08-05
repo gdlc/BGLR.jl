@@ -688,3 +688,36 @@ plot(layer(x=COR[:,1],y=COR[:,2],Geom.point,Theme(default_color=color("red"))),
      Guide.ylabel("Pedigree+Markers"),
      Guide.title("E1"))
 
+
+#Bayesian LASSO
+ using BGLR
+
+#Reading Data 
+ X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# Bayesian Ridge Regression
+ ETA=Dict("mrk"=>BL(X))
+ fm=bglr(y=y,ETA=ETA);
+
+
+
+#Bayesian LASSO
+ using BGLR
+ using Gadfly
+
+#Reading Data
+ X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# Bayesian Ridge Regression
+ ETA=Dict("mrk"=>BL(X))
+ fm=bglr(y=y,ETA=ETA);
+
+#Plots
+ plot(x=fm.y,y=fm.yHat)
+
+
+
+
+
