@@ -717,7 +717,18 @@ plot(layer(x=COR[:,1],y=COR[:,2],Geom.point,Theme(default_color=color("red"))),
 #Plots
  plot(x=fm.y,y=fm.yHat)
 
+#BayesA
+  using BGLR
+  using Gadfly
 
+# Reading Data 
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
 
-
+# BayesA
+  ETA=Dict("mrk"=>BayesA(X))
+  fm=bglr(y=y,ETA=ETA);
+   
+#Plots
+  plot(x=fm.y,y=fm.yHat)
 

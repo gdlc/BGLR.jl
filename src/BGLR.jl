@@ -8,6 +8,7 @@ export
 	RKHS,
 	BRR,
         BL,
+	BayesA,
 	FixEff,
 	read_bed,
 	model_matrix,
@@ -449,6 +450,9 @@ function updateRandRegBL(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSa
 		    fm.varE[1])
 
 	if(saveSamples)
+
+		writeln(fm.ETA[label].con,fm.ETA[label].lambda,"")
+                
 		if(updateMeans)
 
 		end
@@ -457,6 +461,127 @@ function updateRandRegBL(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSa
 	return fm
 	
 end
+
+#Bayes A, Mewissen et al. (2001).
+#Prediction of Total Genetic Value Using Genome-Wide Dense Marker Maps
+#Genetics 157: 1819-1829, Modified so that the Scale parameter 
+#is estimated from data (a gamma prior is assigned)
+
+## Linear Term: BayesA
+type RandRegBayesA # BayesA
+  name::ASCIIString
+  n::Int64 # number or individuals
+  p::Int64 # number of vectors
+  X::Array{Float64,2} # incidence matrix
+  x2::Array{Float64,1} # sum of squares of columns of X
+  effects::Array{Float64,1} # b
+  eta::Array{Float64,1} # X*b
+  R2::Float64
+  df0::Float64 #prior degree of freedom
+  S0::Float64  #prior scale
+  df::Float64  #degrees of freedom of the conditional distribution
+  shape0::Float64 #shape parameter for the gamma prior assigned to Scale
+  rate0::Float64  #rate parameter for the gamma prior assigned to Scale
+  S::Float64 #Scale parameter
+  var::Array{Float64,1} # variance of effects
+  post_var::Array{Float64,1}  # posterior mean
+  post_var2::Array{Float64,1} # posterior mean of the squared of the variance
+  post_SD_var::Array{Float64,1} # posterior standard deviation
+  post_effects::Array{Float64,1}
+  post_effects2::Array{Float64,1}
+  post_SD_effects::Array{Float64,1}
+  post_eta::Array{Float64,1} #1 posterior mean of linear term
+  post_eta2::Array{Float64,1} # posterior mean of the linear term squared
+  post_SD_eta::Array{Float64,1} # posterior SD of the linear term
+  fname::ASCIIString
+  con::streamOrASCIIString # a connection where samples will be saved
+  nSums::Int64
+  k::Float64
+end
+
+#Function to setup RandReg
+#when the prior for the coefficients is distributed according to BayesA model
+
+function BayesA(X::Array{Float64,2};R2=-Inf,df0=-Inf,S0=-Inf,shape0=-Inf,rate0=-Inf)
+        n,p=size(X)  #sample size and number of predictors
+        return RandRegBayesA("BayesA",n,p,X,zeros(p),zeros(p),zeros(n),R2,df0,S0,0.0,shape0,rate0,0.0,zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+end
+
+#Example
+#BayesA(X)
+
+function BayesA_post_init(LT::RandRegBayesA, Vy::Float64, nLT::Int64, R2::Float64)
+
+        #The sum of squares of columns of X
+        for j in 1:LT.p
+            LT.x2[j]=sum(LT.X[:,j].^2)
+        end
+
+	#sumMeanXSq
+        sumMeanXSq=0.0
+        for j in 1:LT.p
+                sumMeanXSq+=(mean(LT.X[:,j]))^2
+        end
+
+        MSx=sum(LT.x2)/LT.n-sumMeanXSq
+
+        #Default degrees of freedom for the prior assigned to the variance of the markers
+        if(LT.df0<0)
+		LT.df0=5
+		warn("DF in LP was missing and was set to ",LT.df0,"\n")
+		LT.df=LT.df0+1
+        end
+
+        if(LT.R2<0)
+                LT.R2=R2/nLT
+		warn("R2 in LP was missing and was set to ", LT.R2,"\n")
+        end
+
+	#Default scale parameter for the prior assigned to the variance of markers
+	if(LT.S0<0)
+		LT.S0=Vy*LT.R2/MSx*(LT.df0+2)
+		warn("Scale in LP was missing and was set to ", LT.S0,"\n")
+	end
+
+	#Improvement: Treat Scale as random, assign a gamma density
+	if(LT.shape0<0)
+		LT.shape0=1.1
+	end
+	
+	if(LT.rate0<0)
+		LT.rate0=(LT.shape0-1)/LT.S0
+	end
+
+        #Initial value for S
+	LT.S=LT.S0
+
+	#Initial value for variances of regression coefficients
+	LT.var=rep(LT.S0/(LT.df0+2),each=LT.p)
+end
+
+function updateRandRegBayesA(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
+        p=fm.ETA[label].p
+        n=fm.ETA[label].n
+
+        varBj=fm.ETA[label].var
+
+        sample_beta(n, p, fm.ETA[label].X, fm.ETA[label].x2,
+                    fm.ETA[label].effects,fm.error, varBj,
+                    fm.varE[1])
+
+        if(saveSamples)
+
+                writeln(fm.ETA[label].con,fm.ETA[label].S,"")
+
+                if(updateMeans)
+
+                end
+        end
+
+        return fm
+
+end
+
 
 function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=string(pwd(),"/"),verbose=true,df0=1,S0=-Inf,naCode= -999, groups="null")
    #y=rand(10);ETA=Dict();nIter=-1;R2=.5;burnIn=500;thin=5;path="";verbose=true;df0=0;S0=0;saveAt=pwd()*"/"
@@ -507,7 +632,8 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
    for term in ETA
         if(typeof(term[2])==INT ||
 	   typeof(term[2])==RandRegBRR ||
-           typeof(term[2])==RandRegBL)
+           typeof(term[2])==RandRegBL || 
+           typeof(term[2])==RandRegBayesA)
 
 		#Ridge Regression, RKHS, FIXED effects
 		if(typeof(term[2])==RandRegBRR)
@@ -530,9 +656,17 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 				BL_post_init(term[2], Vy, length(ETA)-1, R2)
 			end
 		end
+	
+		if(typeof(term[2])==RandRegBayesA)
+			if(nGroups>1)
+				error("Groups not supported for BayesA")
+			else
+				BayesA_post_init(term[2], Vy, length(ETA)-1,R2)
+			end
+		end
 			
               else 
-        	error("The elements of ETA must of type RandRegBRR RandRegBL or INT")
+        	error("The elements of ETA must of type RandRegBRR, RandRegBL, RandRegBayesA or INT")
 	      end
    end #end for    
 
@@ -552,6 +686,11 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 	  if(typeof(term[2])==RandRegBL)
 	        #Add your magic code here
 		term[2].fname=string(saveAt,term[2].name,"_lambda.dat")
+	  end
+
+	  if(typeof(term[2])==RandRegBayesA)
+		#Add your magic code here
+		term[2].fname=string(saveAt,term[2].name,"_ScaleBayesA.dat")
 	  end
 	  
 	  term[2].con=open(term[2].fname,"w+")
@@ -589,6 +728,10 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
   		  	nSums+=1
   		  	k=(nSums-1)/nSums
   		end
+
+		#deltaSS and deltadf for updating varE
+		deltaSS=0
+		deltadf=0
   		
   		## Sampling effects and other parameters of the LP
   		for term in ETA    ## Loop over terms in the linear predictor
@@ -648,7 +791,31 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 				  	fm.ETA[term[1]].lambda=sqrt(fm.ETA[term[1]].lambda2)
 				  	println("lambda=",round(fm.ETA[term[1]].lambda,2))
 				end
+				
+				deltaSS=deltaSS+sum(((fm.ETA[term[1]].effects)./sqrt(fm.ETA[term[1]].tau2)).^2)
+				deltadf=deltadf+fm.ETA[term[1]].p
                        
+			end
+
+			if(typeof(term[2])==RandRegBayesA)
+
+				#Groups are not allowed for BayesA
+
+				#Update regression coefficients
+				fm=updateRandRegBayesA(fm, term[1], fm.updateMeans, fm.saveSamples, nSums, k)
+
+				#Update variances
+				for j=1:fm.ETA[term[1]].p
+					SS=fm.ETA[term[1]].S+ETA[term[1]].effects[j]^2
+					fm.ETA[term[1]].var[j]=SS/rand(Chisq(fm.ETA[term[1]].df),1)[]
+				end
+
+				#Update scale parameter
+				#FIXME, this is constant, so we can move to the initialization of the 
+				#linear term
+				tmpShape=fm.ETA[term[1]].p*fm.ETA[term[1]].df0/2+fm.ETA[term[1]].shape0
+				tmpRate=sum(1./fm.ETA[term[1]].var)/2+fm.ETA[term[1]].rate0
+				fm.ETA[term[1]].S=rand(Gamma(tmpShape,1/tmpRate))
 			end
 	
   		end
@@ -657,13 +824,13 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 
 		if(nGroups>1)
 			for g in 1:nGroups
-				SS=sumsq(fm.error[groups.==g])
-				df=fm.df0+frequencies[g]
+				SS=sumsq(fm.error[groups.==g])+fm.S0+deltaSS
+				df=fm.df0+frequencies[g]+deltadf
 				fm.varE[g]=SS/rand(Chisq(df),1)[]
 			end
 		else
-			SS=sumsq(fm.error)+fm.S0
-                        fm.varE[1]= SS/rand(Chisq(fm.df),1)[]
+			SS=sumsq(fm.error)+fm.S0+deltaSS
+                        fm.varE[1]= SS/rand(Chisq(fm.df+deltadf),1)[]
 		end
 
 		if(fm.saveSamples)

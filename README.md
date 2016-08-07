@@ -26,6 +26,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Genomic BLUP](#GBLUP)
   * [Parametric Shrinkage and Variable Selection](#BRR)
   * [Bayesian LASSO](#BL)
+  * [BayesA](#BayesA)
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
   * [Reproducing Kernel Hilbert Spaces Regression with single Kernel methods](#RKHS)
   * [Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging](#RKHS-KA)
@@ -106,6 +107,27 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 #Plots
  plot(x=fm.y,y=fm.yHat)
 
+```
+
+### BayesA
+<div id="BayesA" />
+
+```julia
+
+#BayesA
+  using BGLR
+  using Gadfly
+
+# Reading Data
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# BayesA
+  ETA=Dict("mrk"=>BayesA(X))
+  fm=bglr(y=y,ETA=ETA);
+
+#Plots
+  plot(x=fm.y,y=fm.yHat)
 ```
 
 ### Integrating fixed effects, random regression on markers and pedigrees data
