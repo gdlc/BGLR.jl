@@ -29,7 +29,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [BayesA](#BayesA)
   * [BayesB](#BayesB)
   * [Parametric Shrinkage and Variable Selection](#BRR-BA-BB)
-  * [Fitting models for genetic and non genetic factors(#FMP)
+  * [Fitting models for genetic and non genetic factors](#FMP)
   * [Fitting a pedigree + markers BLUP model](#MP)
   * [Reproducing Kernel Hilbert Spaces Regression with single Kernel methods](#RKHS)
   * [Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging](#RKHS-KA)

@@ -458,7 +458,8 @@ function updateRandRegBL(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSa
 		writeln(fm.ETA[label].con,fm.ETA[label].lambda,"")
                 
 		if(updateMeans)
-
+			fm.ETA[label].post_effects=fm.ETA[label].post_effects*k+fm.ETA[label].effects/nSums
+                        fm.ETA[label].post_effects2=fm.ETA[label].post_effects2*k+(fm.ETA[label].effects.^2)/nSums
 		end
 	end
 	
