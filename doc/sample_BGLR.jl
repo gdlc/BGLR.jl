@@ -732,3 +732,79 @@ plot(layer(x=COR[:,1],y=COR[:,2],Geom.point,Theme(default_color=color("red"))),
 #Plots
   plot(x=fm.y,y=fm.yHat)
 
+#BayesB
+  using BGLR
+  using Gadfly
+
+# Reading Data
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# BayesB
+  ETA=Dict("mrk"=>BayesB(X))
+  fm=bglr(y=y,ETA=ETA);
+
+#Plots
+  plot(x=fm.y,y=fm.yHat)
+
+
+############################################################################################################
+#Example 1
+#Box 6
+
+using BGLR
+using Distributions
+using Gadfly
+
+
+# Reading data (markers are in BED binary format, http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml).
+  X=read_bed(joinpath(Pkg.dir(),"BGLR/data/mice.X.bed"),1814,10346);
+
+# Simulation
+
+  srand(456);
+  n,p=size(X);
+  X=scale(X);
+
+  h2=0.5;
+  nQTL=10;
+  whichQTL=[517,1551,2585,3619,4653,5687,6721,7755,8789,9823];
+  b0=zeros(p);
+  b0[whichQTL]=rand(Normal(0,sqrt(h2/nQTL)),10);
+  signal=X*b0;
+  error=rand(Normal(0,sqrt(1-h2)),n);
+  y=signal+error;
+
+#Bayesian Ridge Regression
+  ETA_BRR=Dict("BRR"=>BRR(X))
+
+#BayesA
+  ETA_BA=Dict("BA"=>BayesA(X))
+
+#BayesB
+  ETA_BB=Dict("BB"=>BayesB(X))
+ 
+#Fitting models
+  fmBB=bglr(y=y,ETA=ETA_BB,nIter=10000,burnIn=5000);
+
+#Plots
+  plot(x=fmBB.y,y=fmBB.yHat)
+
+  plot(layer(x=[1:p],y=abs(fmBB.ETA["BB"].post_effects),Geom.point,Theme(default_color=color("red"))),
+       layer(x=whichQTL,y=abs(b0[whichQTL]),Geom.point,Theme(default_color=color("blue"))))
+
+  p1=plot(x=[1:p],y=abs(fmBB.ETA["BB"].post_effects),
+          xintercept=whichQTL,
+	  Geom.point,
+          Geom.vline(color=color("blue")),
+          Theme(default_color=color("red"),grid_color=color("white"),
+                grid_color_focused=color("white"),highlight_width=0mm,
+                default_point_size=1.5pt,
+                panel_stroke=color("black")),
+          Guide.xticks(ticks=[0,2000,4000,6000,8000,10000]),
+          Guide.xlabel("Marker position (order)"),
+          Guide.ylabel("|&beta;<sub>j</sub>|"))
+  q1=layer(x=whichQTL,y=abs(b0[whichQTL]),Geom.point,Theme(default_color=color("blue"))); 
+  append!(p1.layers,q1);
+
+  display(p1)

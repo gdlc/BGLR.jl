@@ -9,6 +9,7 @@ export
 	BRR,
         BL,
 	BayesA,
+	BayesB,
 	FixEff,
 	read_bed,
 	model_matrix,
@@ -18,6 +19,9 @@ import
 	Distributions.Normal,
 	Distributions.Chisq,
         Distributions.Gamma,
+	Distributions.Bernoulli,
+	Distributions.Uniform,
+	Distributions.Beta,
 	Base.LinAlg.BLAS.axpy!,
 	ArrayViews.unsafe_view,
 	Base.LinAlg.scale 
@@ -582,6 +586,154 @@ function updateRandRegBayesA(fm::BGLRt,label::ASCIIString, updateMeans::Bool, sa
 
 end
 
+#Pseudo BayesB with random scale and random proportion of markers "in" the model
+#See Variable selection for regression models, 
+#Lynn Kuo and Bani Mallic, 1998. 
+
+##Linear Term: BayesB
+type RandRegBayesB #BayesB
+  name::ASCIIString
+  n::Int64  #Number of individuals
+  p::Int64  #Number of markers 
+  X::Array{Float64,2} #incidence matrix
+  x2::Array{Float64,1} #Sum of squares of columns of X
+  effects::Array{Float64,1} #b
+  eta::Array{Float64,1} #X*b
+  probIn::Float64 #Prob of a marker being in the model
+  counts::Int64 #Prior counts 
+  countsIn::Float64
+  countsOut::Float64
+  d::Array{Int64,1}
+  R2::Float64
+  df0::Float64 #prior degree of freedom
+  S0::Float64  #prior scale
+  df::Float64  #degrees of freedom of the conditional distribution
+  shape0::Float64 #shape parameter for the gamma prior assigned to Scale
+  rate0::Float64  #rate paramter for the gamma prior assigned to Scale
+  S::Float64 #Scale parameter
+  var::Array{Float64,1} #Variance of effects
+  post_var::Array{Float64,1} #posterior mean
+  post_var2::Array{Float64,1} #posterior mean of the squared of the variance
+  post_SD_var::Array{Float64,1} #posterior standard deviation
+  post_effects::Array{Float64,1} 
+  post_effects2::Array{Float64,1}
+  post_SD_effects::Array{Float64,1}
+  post_eta::Array{Float64,1} #posterior mean of linear term
+  post_eta2::Array{Float64,1} #posterior mean of the linear term squared
+  post_SD_eta::Array{Float64,1} #posterior SD of the linear term
+  fname::ASCIIString
+  con::streamOrASCIIString #connection where the samples will be saved
+  nSums::Int64
+  k::Float64
+end
+
+
+#Function to setup RandReg
+#when the prior of the coefficients is a mixture as defined in BayesB
+
+function BayesB(X::Array{Float64,2}; R2=-Inf, df0=-Inf, S0=-Inf, shape0=-Inf, rate0=-Inf,probIn=0.5,counts=10)
+	n,p=size(X) #Sample size and number of predictors
+        return RandRegBayesB("BayesB",n,p,X,zeros(p),zeros(p),zeros(n),probIn,counts,0.0,0.0,zeros(Int64,p),R2,df0,S0,0.0,shape0,rate0,0.0,zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+end
+
+#Example
+#BayesB(X)
+
+function BayesB_post_init(LT::RandRegBayesB, Vy::Float64, nLT::Int64, R2::Float64)
+
+        #The sum of squares of columns of X
+        for j in 1:LT.p
+            LT.x2[j]=sum(LT.X[:,j].^2)
+        end
+
+        #sumMeanXSq
+        sumMeanXSq=0.0
+        for j in 1:LT.p
+                sumMeanXSq+=(mean(LT.X[:,j]))^2
+        end
+
+        MSx=sum(LT.x2)/LT.n-sumMeanXSq
+
+        if(LT.R2<0)
+                LT.R2=R2/nLT
+                warn("R2 in LP was missing and was set to ", LT.R2,"\n")
+        end
+
+	#Default value for the degrees of freedom associated with the distribution assigned to the variance
+	#of marker effects
+	if(LT.df0<0)
+		LT.df0=5
+		warn("DF in LP was missing and was set to ", LT.df0,"\n")
+		LT.df=LT.df0+1
+	end
+
+	#Default value for a marker being "in" the model
+        if(LT.probIn<0)
+		LT.probIn=0.5
+		warn("ProbIn in LT was missing and was set to ", LT.probIn,"\n")
+	end
+
+	#Default value for prior counts
+	if(LT.counts<0)
+		LT.counts=10
+		warn("Counts in LP was missing and was set to ", LT.counts,"\n")
+	end
+	
+	LT.countsIn=LT.counts*LT.probIn
+	LT.countsOut=LT.counts-LT.countsIn
+	
+	#Default value for the scale parameter associated with the distribution assigned to the variance of 
+	#marker effects
+	if(LT.S0<0)
+		LT.S0=Vy*LT.R2/MSx*(LT.df0+2)/LT.probIn
+		warn("Scale parameter in LP was missing and was set to ",LT.S0,"\n")
+	end
+
+	if(LT.shape0<0)
+		LT.shape0=1.1
+	end
+
+	if(LT.rate0<0)
+		LT.rate0=(LT.shape0-1)/LT.S0
+	end
+
+	#Initial value for S
+	LT.S=LT.S0
+
+	#Initial value for variances of regression coefficients
+        LT.var=rep(LT.S0/(LT.df0+2),each=LT.p)
+
+	#Initial value for d
+        d=rand(Bernoulli(LT.probIn),LT.p)
+	
+end
+
+function updateRandRegBayesB(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
+        p=fm.ETA[label].p
+        n=fm.ETA[label].n
+
+        varBj=fm.ETA[label].var
+
+        sample_beta_BB_BCp(n, p, fm.ETA[label].X, fm.ETA[label].x2, fm.ETA[label].effects,
+                           fm.ETA[label].d,fm.error,varBj,fm.varE[1],
+                           fm.ETA[label].probIn)
+
+        if(saveSamples)
+
+                #writeln(fm.ETA[label].con,fm.ETA[label].S,"")
+
+                if(updateMeans)
+
+			fm.ETA[label].post_effects=fm.ETA[label].post_effects*k+fm.ETA[label].effects/nSums
+                        fm.ETA[label].post_effects2=fm.ETA[label].post_effects2*k+(fm.ETA[label].effects.^2)/nSums
+
+                end
+        end
+
+        return fm
+
+end
+
 
 function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=string(pwd(),"/"),verbose=true,df0=1,S0=-Inf,naCode= -999, groups="null")
    #y=rand(10);ETA=Dict();nIter=-1;R2=.5;burnIn=500;thin=5;path="";verbose=true;df0=0;S0=0;saveAt=pwd()*"/"
@@ -633,7 +785,8 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
         if(typeof(term[2])==INT ||
 	   typeof(term[2])==RandRegBRR ||
            typeof(term[2])==RandRegBL || 
-           typeof(term[2])==RandRegBayesA)
+           typeof(term[2])==RandRegBayesA || 
+           typeof(term[2])==RandRegBayesB)
 
 		#Ridge Regression, RKHS, FIXED effects
 		if(typeof(term[2])==RandRegBRR)
@@ -664,9 +817,17 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 				BayesA_post_init(term[2], Vy, length(ETA)-1,R2)
 			end
 		end
+
+		if(typeof(term[2])==RandRegBayesB)
+			if(nGroups>1)
+				error("Groups not supported for BayesB")
+			else
+				BayesB_post_init(term[2], Vy, length(ETA)-1,R2)
+			end
+		end
 			
               else 
-        	error("The elements of ETA must of type RandRegBRR, RandRegBL, RandRegBayesA or INT")
+        	error("The elements of ETA must of type RandRegBRR, RandRegBL, RandRegBayesA,RandRegBayesB or INT")
 	      end
    end #end for    
 
@@ -691,6 +852,11 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 	  if(typeof(term[2])==RandRegBayesA)
 		#Add your magic code here
 		term[2].fname=string(saveAt,term[2].name,"_ScaleBayesA.dat")
+	  end
+
+	  if(typeof(term[2])==RandRegBayesB)
+		#Add your magic code here
+		term[2].fname=string(saveAt,term[2].name,"_parBayesB.dat")
 	  end
 	  
 	  term[2].con=open(term[2].fname,"w+")
@@ -816,6 +982,33 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 				tmpShape=fm.ETA[term[1]].p*fm.ETA[term[1]].df0/2+fm.ETA[term[1]].shape0
 				tmpRate=sum(1./fm.ETA[term[1]].var)/2+fm.ETA[term[1]].rate0
 				fm.ETA[term[1]].S=rand(Gamma(tmpShape,1/tmpRate))
+			end
+
+			if(typeof(term[2])==RandRegBayesB)
+				#Groups are not allowed for BayesB
+
+				#Update regression coefficients
+
+				fm=updateRandRegBayesB(fm, term[1], fm.updateMeans, fm.saveSamples, nSums, k)
+				
+				#Update variances
+                                for j=1:fm.ETA[term[1]].p
+                                        SS=fm.ETA[term[1]].S+ETA[term[1]].effects[j]^2
+                                        fm.ETA[term[1]].var[j]=SS/rand(Chisq(fm.ETA[term[1]].df),1)[]
+                                end
+
+                                #Update scale parameter
+                                #FIXME, this is constant, so we can move to the initialization of the
+                                #linear term
+                                tmpShape=fm.ETA[term[1]].p*fm.ETA[term[1]].df0/2+fm.ETA[term[1]].shape0
+                                tmpRate=sum(1./fm.ETA[term[1]].var)/2+fm.ETA[term[1]].rate0
+                                fm.ETA[term[1]].S=rand(Gamma(tmpShape,1/tmpRate))
+
+				#Update probIn
+				mrkIn=sum(fm.ETA[term[1]].d)
+				shape1=mrkIn+fm.ETA[term[1]].countsIn+1
+				shape2=fm.ETA[term[1]].p-mrkIn+fm.ETA[term[1]].countsOut+1
+                                fm.ETA[term[1]].probIn=rand(Beta(shape1,shape2),1)[]
 			end
 	
   		end
