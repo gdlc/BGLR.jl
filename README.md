@@ -228,9 +228,6 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 
 <img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig2.png" width="800">
 
-
-
-
 ### Fitting models for genetic and non genetic factors
 <div id="FMP" />
 
@@ -270,6 +267,20 @@ using Gadfly
   fm=bglr(y=y,ETA=ETA,nIter=10000,burnIn=5000);
 
 #Plots
+
+  Guide.xticks(ticks=[0,2000,4000,6000,8000,10000]),
+          Guide.xlabel("Marker position (order)"),
+          Guide.ylabel("|&beta;<sub>j</sub>|"))
+
+  #a)
+  plot(x=[1:10346],y=fm.ETA["Mrk"].post_effects.^2,
+       Geom.point,Geom.line,
+       Guide.xticks(ticks=[0,2000,4000,6000,8000,10000]),
+       Theme(highlight_width=0mm, panel_stroke=color("black")),
+       Guide.xlabel("Marker position (order)"),
+       Guide.ylabel("&beta;<sub>j</sub> <sup>2</sup>"),
+       Guide.title("Marker Effects"))  
+
   #b)
   plot(x=fm.y,
        y=fm.yHat,
@@ -286,7 +297,8 @@ using Gadfly
        Geom.line,
        Theme(panel_stroke=color("black")),
        Guide.xlabel("Sample"),
-       Guide.ylabel("&sigma;<sub>e</sub> <sup>2</sup>"))
+       Guide.ylabel("&sigma;<sub>e</sub> <sup>2</sup>"),
+       Guide.title("Residual Variance"))
 
   #d)
   lambda=vec(readdlm("Mrk_lambda.dat")[:,1]);
@@ -297,9 +309,15 @@ using Gadfly
        Geom.line,
        Theme(panel_stroke=color("black")),
        Guide.xlabel("Sample"),
-       Guide.ylabel("&lambda;"))
+       Guide.ylabel("&lambda;"),
+       Guide.title("Regularization Parameter"))
 
 ```
+
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3a.png" width="800">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3b.png" width="800">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3c.png" width="800">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3d.png" width="800">
 
 ### Fitting a pedigree +  markers BLUP model
 <div id="MP" />
@@ -333,7 +351,6 @@ using BGLR
 
 
 ```
-
 
 ### Reproducing Kernel Hilbert Spaces Regression with single Kernel methods
 <div id="RKHS" />
