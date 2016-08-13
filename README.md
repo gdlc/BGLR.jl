@@ -25,10 +25,10 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 #### Examples
   * [Genomic BLUP](#GBLUP)
   * [Bayesian Ridge Regression](#BRR)
-  * [Parametric Shrinkage and Variable Selection](#BRR-BA-BB)
   * [Bayesian LASSO](#BL)
   * [BayesA](#BayesA)
   * [BayesB](#BayesB)
+  * [Parametric Shrinkage and Variable Selection](#BRR-BA-BB)
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
   * [Reproducing Kernel Hilbert Spaces Regression with single Kernel methods](#RKHS)
   * [Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging](#RKHS-KA)
@@ -87,6 +87,69 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   fm.varE # posterior mean of error variance
   fm.yHat # predictions
   fm.ETA["mrk"].var # variance of the random effect associated to markers
+```
+
+### Bayesian LASSO
+<div id="BL" />
+
+```julia
+
+#Bayesian LASSO
+ using BGLR
+ using Gadfly
+
+#Reading Data
+ X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# Bayesian LASSO
+ ETA=Dict("mrk"=>BL(X))
+ fm=bglr(y=y,ETA=ETA);
+
+#Plots
+ plot(x=fm.y,y=fm.yHat)
+
+```
+
+### BayesA
+<div id="BayesA" />
+
+```julia
+
+#BayesA
+  using BGLR
+  using Gadfly
+
+# Reading Data
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# BayesA
+  ETA=Dict("mrk"=>BayesA(X))
+  fm=bglr(y=y,ETA=ETA);
+
+#Plots
+  plot(x=fm.y,y=fm.yHat)
+```
+
+### BayesB
+<div id="BayesB" />
+```julia
+#BayesB
+  using BGLR
+  using Gadfly
+
+# Reading Data
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# BayesB
+  ETA=Dict("mrk"=>BayesB(X))
+  fm=bglr(y=y,ETA=ETA);
+
+#Plots
+  plot(x=fm.y,y=fm.yHat)
+
 ```
 
 ### Parametric Shrinkage and Variable Selection
@@ -165,68 +228,6 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 <img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig2.png" width="800">
 
 
-### Bayesian LASSO
-<div id="BL" />
-
-```julia
-
-#Bayesian LASSO
- using BGLR
- using Gadfly
-
-#Reading Data
- X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
- y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
-
-# Bayesian Ridge LASSO
- ETA=Dict("mrk"=>BL(X))
- fm=bglr(y=y,ETA=ETA);
-
-#Plots
- plot(x=fm.y,y=fm.yHat)
-
-```
-
-### BayesA
-<div id="BayesA" />
-
-```julia
-
-#BayesA
-  using BGLR
-  using Gadfly
-
-# Reading Data
-  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
-  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
-
-# BayesA
-  ETA=Dict("mrk"=>BayesA(X))
-  fm=bglr(y=y,ETA=ETA);
-
-#Plots
-  plot(x=fm.y,y=fm.yHat)
-```
-
-### BayesB
-<div id="BayesB" />
-```julia
-#BayesB
-  using BGLR
-  using Gadfly
-
-# Reading Data
-  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
-  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
-
-# BayesB
-  ETA=Dict("mrk"=>BayesB(X))
-  fm=bglr(y=y,ETA=ETA);
-
-#Plots
-  plot(x=fm.y,y=fm.yHat)
-
-```
 
 
 ### Integrating fixed effects, random regression on markers and pedigrees data
