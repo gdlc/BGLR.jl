@@ -386,7 +386,8 @@ using Gadfly
 ```julia
 
 #Assesment of prediction accuracy using a single training-testing partition
-#Box 12 in BGLR package
+#Example 6 of BGLR paper
+#Box 12
 using BGLR
 using StatsBase
 using Gadfly
@@ -437,7 +438,8 @@ using Gadfly
 ```julia
 
 #Assesment of prediction accuracy using multiple training-testing partition
-#Box 13 in BGLR package
+#Example 7 of BGLR paper
+#Box 13 
 using BGLR
 using StatsBase
 using Gadfly
