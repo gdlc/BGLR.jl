@@ -28,6 +28,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [Parametric Shrinkage and Variable Selection](#BRR-BA-BB)
   * [Bayesian LASSO](#BL)
   * [BayesA](#BayesA)
+  * [BayesB](#BayesB)
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
   * [Reproducing Kernel Hilbert Spaces Regression with single Kernel methods](#RKHS)
   * [Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging](#RKHS-KA)
@@ -89,7 +90,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 ```
 
 ### Parametric Shrinkage and Variable Selection
-<div id="BRR-BA-BB">
+<div id="BRR-BA-BB" />
 ```julia
 
 ##########################################################################################
@@ -206,6 +207,27 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 #Plots
   plot(x=fm.y,y=fm.yHat)
 ```
+
+### BayesB
+<div id="BayesB" />
+```julia
+#BayesB
+  using BGLR
+  using Gadfly
+
+# Reading Data
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+# BayesB
+  ETA=Dict("mrk"=>BayesB(X))
+  fm=bglr(y=y,ETA=ETA);
+
+#Plots
+  plot(x=fm.y,y=fm.yHat)
+
+```
+
 
 ### Integrating fixed effects, random regression on markers and pedigrees data
 <div id="FMP" />
