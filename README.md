@@ -29,7 +29,8 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   * [BayesA](#BayesA)
   * [BayesB](#BayesB)
   * [Parametric Shrinkage and Variable Selection](#BRR-BA-BB)
-  * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
+  * [Fitting models for genetic and non genetic factors(#FMP)
+  * [Fitting a pedigree + markers BLUP model](#MP)
   * [Reproducing Kernel Hilbert Spaces Regression with single Kernel methods](#RKHS)
   * [Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging](#RKHS-KA)
   * [Prediction in testing data sets using a single training-testing partition](#Trn-Tst1)
@@ -230,7 +231,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 
 
 
-### Integrating fixed effects, random regression on markers and pedigrees data
+### Fitting models for genetic and non genetic factors
 <div id="FMP" />
 
 ```julia
@@ -248,6 +249,7 @@ using Gadfly
   varnames=vec(pheno[2]); pheno=pheno[1]
   y=pheno[:,varnames.=="Obesity.BMI"] #column for BMI
   y=convert(Array{Float64,1}, vec(y))
+  y=(y-mean(y))/sqrt(var(y))
   
   
 # Incidence matrix for sex and litter size using a dummy variable for each level
@@ -259,25 +261,79 @@ using Gadfly
 # Incidence matrix for cage, using a dummy variable for each level
   Z=model_matrix(pheno[:,varnames.=="cage"];intercept=false)
 
+  ETA=Dict("Fixed"=>FixEff(W),
+  	   "Cage"=>BRR(Z),
+	   "Mrk"=>BL(X))
 
-#Relationship matrix derived from pedigree
- A=readcsv(joinpath(Pkg.dir(),"BGLR/data/mice.A.csv");header=true);
- A=A[1]; #The first component of the tuple has the data
+  srand(123);
 
-ETA=Dict("Fixed"=>FixEff(W),
-	 "Cage"=>BRR(Z),
-	 "Mrk"=>BRR(X),
-	 "Ped"=>RKHS(K=A))
+  fm=bglr(y=y,ETA=ETA,nIter=10000,burnIn=5000);
 
+#Plots
+  #b)
+  plot(x=fm.y,
+       y=fm.yHat,
+       Theme(panel_stroke=color("black")),
+       Guide.ylabel("yHat"),
+       Guide.xlabel("y"),
+       Guide.title("Observed vs predicted"))
+  #c)
+  varE=vec(readdlm("varE.dat")[:,1]);
+  plot(x=[1:size(varE)[1]],y=varE,
+       yintercept=[mean(varE)],
+       Geom.hline(color=color("red"),size=1mm),
+       Geom.point,
+       Geom.line,
+       Theme(panel_stroke=color("black")),
+       Guide.xlabel("Sample"),
+       Guide.ylabel("&sigma;<sub>e</sub> <sup>2</sup>"))
 
-fm=bglr(y=y,ETA=ETA);
+  #d)
+  lambda=vec(readdlm("Mrk_lambda.dat")[:,1]);
+  plot(x=[1:size(lambda)[1]],y=lambda,
+       yintercept=[mean(lambda)],
+       Geom.hline(color=color("red"),size=1mm),
+       Geom.point,
+       Geom.line,
+       Theme(panel_stroke=color("black")),
+       Guide.xlabel("Sample"),
+       Guide.ylabel("&lambda;"))
 
-plot(x=fm.y,
-     y=fm.yHat,
-     Guide.ylabel("yHat"),
-     Guide.xlabel("y"),
-     Guide.title("Observed vs predicted"))
 ```
+
+### Fitting a pedigree +  markers BLUP model
+<div id="MP" />
+
+```julia
+
+using BGLR
+
+# Reading Data 
+ #Markers
+  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
+ #Phenotypes
+  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
+
+ #Relationship matrix derived from pedigree
+  A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true);
+  A=A[1]; #The first component of the tuple has the data
+
+# Computing G-Matrix
+  n,p=size(X);
+  X=scale(X);
+  G=X*X';
+  G=G./p;
+
+# Setting the linear predictor
+  ETA=Dict("Mrk"=>RKHS(K=G),
+           "Ped"=>RKHS(K=A)) 
+  
+#Fitting the model
+  fm=bglr(y=y,ETA=ETA);
+
+
+```
+
 
 ### Reproducing Kernel Hilbert Spaces Regression with single Kernel methods
 <div id="RKHS" />
