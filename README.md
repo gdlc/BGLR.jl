@@ -24,7 +24,8 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 
 #### Examples
   * [Genomic BLUP](#GBLUP)
-  * [Parametric Shrinkage and Variable Selection](#BRR)
+  * [Bayesian Ridge Regression](#BRR)
+  * [Parametric Shrinkage and Variable Selection](#BRR-BA-BB)
   * [Bayesian LASSO](#BL)
   * [BayesA](#BayesA)
   * [Integrating fixed effects, regression on markers and pedigrees](#FMP)
@@ -87,6 +88,82 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   fm.ETA["mrk"].var # variance of the random effect associated to markers
 ```
 
+### Parametric Shrinkage and Variable Selection
+<div id="BRR-BA-BB">
+```julia
+
+##########################################################################################
+# Example 1 of  BGLR
+# Box 6 (simulation)
+##########################################################################################
+
+  using BGLR
+  using Distributions
+  using Gadfly
+
+
+# Reading data (markers are in BED binary format, http://pngu.mgh.harvard.edu/~purcell/plink/binary.shtml).
+  X=read_bed(joinpath(Pkg.dir(),"BGLR/data/mice.X.bed"),1814,10346);
+
+# Simulation
+
+  srand(456);
+  n,p=size(X);
+  X=scale(X);
+
+  h2=0.5;
+  nQTL=10;
+  whichQTL=[517,1551,2585,3619,4653,5687,6721,7755,8789,9823];
+  b0=zeros(p);
+  b0[whichQTL]=rand(Normal(0,sqrt(h2/nQTL)),10);
+  signal=X*b0;
+  error=rand(Normal(0,sqrt(1-h2)),n);
+  y=signal+error;
+
+##########################################################################################
+# Example 1 of  BGLR
+# Box 7 (fitting models)
+##########################################################################################
+
+
+#Bayesian Ridge Regression
+  ETA_BRR=Dict("BRR"=>BRR(X))
+
+#BayesA
+  ETA_BA=Dict("BA"=>BayesA(X))
+
+#BayesB
+  ETA_BB=Dict("BB"=>BayesB(X))
+ 
+#Fitting models
+  fmBRR=bglr(y=y,ETA=ETA_BRR,nIter=10000,burnIn=5000);
+  fmBA=bglr(y=y,ETA=ETA_BA,nIter=10000,burnIn=5000);
+  fmBB=bglr(y=y,ETA=ETA_BB,nIter=10000,burnIn=5000);
+
+#Plots
+  plot(x=fmBB.y,y=fmBB.yHat)
+
+  p1=plot(x=[1:p],y=abs(fmBB.ETA["BB"].post_effects),
+          xintercept=whichQTL,
+	  Geom.point,
+          Geom.vline(color=color("blue")),
+          Theme(default_color=color("red"),grid_color=color("white"),
+                grid_color_focused=color("white"),highlight_width=0mm,
+                default_point_size=1.5pt,
+                panel_stroke=color("black")),
+          Guide.xticks(ticks=[0,2000,4000,6000,8000,10000]),
+          Guide.xlabel("Marker position (order)"),
+          Guide.ylabel("|&beta;<sub>j</sub>|"))
+  q1=layer(x=whichQTL,y=abs(b0[whichQTL]),Geom.point,Theme(default_color=color("blue"))); 
+  append!(p1.layers,q1);
+
+  display(p1)
+
+```
+
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig2.png" width="800">
+
+
 ### Bayesian LASSO
 <div id="BL" />
 
@@ -100,7 +177,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
 
-# Bayesian Ridge Regression
+# Bayesian Ridge LASSO
  ETA=Dict("mrk"=>BL(X))
  fm=bglr(y=y,ETA=ETA);
 

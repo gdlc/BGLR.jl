@@ -696,7 +696,7 @@ plot(layer(x=COR[:,1],y=COR[:,2],Geom.point,Theme(default_color=color("red"))),
  X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
  y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1][:,1];
 
-# Bayesian Ridge Regression
+# Bayesian Ridge LASSO
  ETA=Dict("mrk"=>BL(X))
  fm=bglr(y=y,ETA=ETA);
 
@@ -785,6 +785,8 @@ using Gadfly
   ETA_BB=Dict("BB"=>BayesB(X))
  
 #Fitting models
+  fmBRR=bglr(y=y,ETA=ETA_BRR,nIter=10000,burnIn=5000);
+  fmBA=bglr(y=y,ETA=ETA_BA,nIter=10000,burnIn=5000);
   fmBB=bglr(y=y,ETA=ETA_BB,nIter=10000,burnIn=5000);
 
 #Plots
