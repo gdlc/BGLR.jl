@@ -226,7 +226,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 
 ```
 
-<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig2.png" width="800">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig2.png" width="600">
 
 ### Fitting models for genetic and non genetic factors
 <div id="FMP" />
@@ -314,15 +314,20 @@ using Gadfly
 
 ```
 
-<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3a.png" width="800">
-<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3b.png" width="800">
-<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3c.png" width="800">
-<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3d.png" width="800">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3a.png" width="600">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3b.png" width="600">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3c.png" width="600">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig3d.png" width="600">
 
 ### Fitting a pedigree +  markers BLUP model
 <div id="MP" />
 
 ```julia
+
+##########################################################################################
+# Example 3 of  BGLR
+# Box 9
+##########################################################################################
 
 using BGLR
 
@@ -503,7 +508,7 @@ using Gadfly
       Guide.title("Observed vs predicted"))
 
 ```
-<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig5.png" width="800">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig5.png" width="600">
 
 ### Prediction in testing data sets based on multiple training-testing partitions
 <div id="Trn-Tst2">
@@ -574,7 +579,7 @@ plot(layer(x=COR[:,1],y=COR[:,2],Geom.point,Theme(default_color=color("red"))),
 
 ```
 
-<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig6.png" width="800">
+<img src="https://github.com/gdlc/BGLR.jl/blob/master/doc/Fig6.png" width="600">
 
 
 ### Modeling heterogeneous error variances
