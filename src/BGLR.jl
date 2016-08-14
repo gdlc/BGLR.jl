@@ -579,7 +579,8 @@ function updateRandRegBayesA(fm::BGLRt,label::ASCIIString, updateMeans::Bool, sa
                 writeln(fm.ETA[label].con,fm.ETA[label].S,"")
 
                 if(updateMeans)
-
+                	fm.ETA[label].post_effects=fm.ETA[label].post_effects*k+fm.ETA[label].effects/nSums
+                        fm.ETA[label].post_effects2=fm.ETA[label].post_effects2*k+(fm.ETA[label].effects.^2)/nSums
                 end
         end
 
@@ -721,7 +722,7 @@ function updateRandRegBayesB(fm::BGLRt,label::ASCIIString, updateMeans::Bool, sa
 
         if(saveSamples)
 
-                #writeln(fm.ETA[label].con,fm.ETA[label].S,"")
+                writeln(fm.ETA[label].con,[fm.ETA[label].probIn, fm.ETA[label].S],"\t")  #probIn and Scale parameter
 
                 if(updateMeans)
 
@@ -857,8 +858,8 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 
 	  if(typeof(term[2])==RandRegBayesB)
 		#Add your magic code here
-		term[2].fname=string(saveAt,term[2].name,"_parBayesB.dat")
-	  end
+		term[2].fname=string(saveAt,term[2].name,"_parBayesB.dat") 
+ 	  end
 	  
 	  term[2].con=open(term[2].fname,"w+")
    end
@@ -944,9 +945,16 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 				fm=updateRandRegBL(fm, term[1], fm.updateMeans, fm.saveSamples, nSums, k)
 
 				#Update tau^2
+                                #FIXME: This is slow, can we do faster?
+
 				nu=(sqrt(fm.varE[1])*fm.ETA[term[1]].lambda)./abs(fm.ETA[term[1]].effects)
 				for j=1:fm.ETA[term[1]].p
-					fm.ETA[term[1]].tau2[j]=1/rinvGauss(nu[j], fm.ETA[term[1]].lambda2)
+					tmp=1/rinvGauss(nu[j], fm.ETA[term[1]].lambda2)
+                                        if(isfinite(tmp))
+						fm.ETA[term[1]].tau2[j]=tmp
+					else
+						warn("tau^2[",j,"] not updated due to numerical problems\n")
+					end
 				end
 
 				#Update lambda

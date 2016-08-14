@@ -264,7 +264,7 @@ using Gadfly
 
   srand(123);
 
-  fm=bglr(y=y,ETA=ETA,nIter=10000,burnIn=5000);
+  fm=bglr(y=y,ETA=ETA,nIter=105000,burnIn=5000);
 
 #Plots
 
