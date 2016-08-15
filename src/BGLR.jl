@@ -375,6 +375,8 @@ type RandRegBL  #Bayesian LASSO
   post_eta::Array{Float64,1} #posterior mean of linear term
   post_eta2::Array{Float64,1} #posterior mean of the linear term squared
   post_SD_eta::Array{Float64,1} #posterior SD of the linear term
+  post_lambda::Float64
+  post_tau2::Array{Float64,1} 
   fname::ASCIIString
   con::streamOrASCIIString #a connection where samples will be saved
   nSums::Int64
@@ -386,7 +388,7 @@ end
 
 function BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf)
 	n,p=size(X)  #sample size and number of predictors
-	return RandRegBL("BL",n,p,X,zeros(p),zeros(p),zeros(n),R2,lambda,lambda^2,lambda_type,shape,rate,zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+	return RandRegBL("BL",n,p,X,zeros(p),zeros(p),zeros(n),R2,lambda,lambda^2,lambda_type,shape,rate,zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),0.0,zeros(p),"","",0,0)
 end
 
 #Example
@@ -460,6 +462,9 @@ function updateRandRegBL(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSa
 		if(updateMeans)
 			fm.ETA[label].post_effects=fm.ETA[label].post_effects*k+fm.ETA[label].effects/nSums
                         fm.ETA[label].post_effects2=fm.ETA[label].post_effects2*k+(fm.ETA[label].effects.^2)/nSums
+
+			fm.ETA[label].post_lambda=fm.ETA[label].post_lambda*k+fm.ETA[label].lambda/nSums
+                        fm.ETA[label].post_tau2=fm.ETA[label].post_tau2*k+fm.ETA[label].tau2/nSums
 		end
 	end
 	
@@ -581,6 +586,9 @@ function updateRandRegBayesA(fm::BGLRt,label::ASCIIString, updateMeans::Bool, sa
                 if(updateMeans)
                 	fm.ETA[label].post_effects=fm.ETA[label].post_effects*k+fm.ETA[label].effects/nSums
                         fm.ETA[label].post_effects2=fm.ETA[label].post_effects2*k+(fm.ETA[label].effects.^2)/nSums
+
+			fm.ETA[label].post_var=fm.ETA[label].post_var*k+fm.ETA[label].var/nSums
+                        fm.ETA[label].post_var2=fm.ETA[label].post_var2*k+(fm.ETA[label].var).^2/nSums
                 end
         end
 
@@ -623,6 +631,8 @@ type RandRegBayesB #BayesB
   post_eta::Array{Float64,1} #posterior mean of linear term
   post_eta2::Array{Float64,1} #posterior mean of the linear term squared
   post_SD_eta::Array{Float64,1} #posterior SD of the linear term
+  post_probIn::Float64
+  post_probIn2::Float64 
   fname::ASCIIString
   con::streamOrASCIIString #connection where the samples will be saved
   nSums::Int64
@@ -635,7 +645,7 @@ end
 
 function BayesB(X::Array{Float64,2}; R2=-Inf, df0=-Inf, S0=-Inf, shape0=-Inf, rate0=-Inf,probIn=0.5,counts=10)
 	n,p=size(X) #Sample size and number of predictors
-        return RandRegBayesB("BayesB",n,p,X,zeros(p),zeros(p),zeros(n),probIn,counts,0.0,0.0,zeros(Int64,p),R2,df0,S0,0.0,shape0,rate0,0.0,zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+        return RandRegBayesB("BayesB",n,p,X,zeros(p),zeros(p),zeros(n),probIn,counts,0.0,0.0,zeros(Int64,p),R2,df0,S0,0.0,shape0,rate0,0.0,zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),0.0,0.0,"","",0,0)
 end
 
 #Example
@@ -729,6 +739,11 @@ function updateRandRegBayesB(fm::BGLRt,label::ASCIIString, updateMeans::Bool, sa
 			fm.ETA[label].post_effects=fm.ETA[label].post_effects*k+fm.ETA[label].effects/nSums
                         fm.ETA[label].post_effects2=fm.ETA[label].post_effects2*k+(fm.ETA[label].effects.^2)/nSums
 
+			fm.ETA[label].post_var=fm.ETA[label].post_var*k+fm.ETA[label].var/nSums
+                        fm.ETA[label].post_var2=fm.ETA[label].post_var2*k+(fm.ETA[label].var).^2/nSums
+
+			fm.ETA[label].post_probIn=fm.ETA[label].post_probIn*k+fm.ETA[label].probIn/nSums
+                        fm.ETA[label].post_probIn2=fm.ETA[label].post_probIn2*k+(fm.ETA[label].probIn^2)/nSums
                 end
         end
 
