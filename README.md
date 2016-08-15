@@ -268,10 +268,6 @@ using Gadfly
 
 #Plots
 
-  Guide.xticks(ticks=[0,2000,4000,6000,8000,10000]),
-          Guide.xlabel("Marker position (order)"),
-          Guide.ylabel("|&beta;<sub>j</sub>|"))
-
   #a)
   plot(x=[1:10346],y=fm.ETA["Mrk"].post_effects.^2,
        Geom.point,Geom.line,
@@ -295,6 +291,7 @@ using Gadfly
        Geom.hline(color=color("red"),size=1mm),
        Geom.point,
        Geom.line,
+       Guide.xticks(ticks=[0,5000,10000,15000,20000]),
        Theme(panel_stroke=color("black")),
        Guide.xlabel("Sample"),
        Guide.ylabel("&sigma;<sub>e</sub> <sup>2</sup>"),
@@ -307,6 +304,7 @@ using Gadfly
        Geom.hline(color=color("red"),size=1mm),
        Geom.point,
        Geom.line,
+       Guide.xticks(ticks=[0,5000,10000,15000,20000]),
        Theme(panel_stroke=color("black")),
        Guide.xlabel("Sample"),
        Guide.ylabel("&lambda;"),
