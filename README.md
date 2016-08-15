@@ -262,7 +262,7 @@ using Gadfly
   	   "Cage"=>BRR(Z),
 	   "Mrk"=>BL(X))
 
-  srand(123);
+  srand(456);
 
   fm=bglr(y=y,ETA=ETA,nIter=105000,burnIn=5000);
 
