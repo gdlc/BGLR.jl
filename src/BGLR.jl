@@ -191,6 +191,20 @@ type RandRegBRR # Bayesian Ridge Regression
 end
 
 
+"""
+BRR(X::Array{Float64,2};R2=-Inf,df0=-Inf,S0=-Inf)
+Function to setup the prior distributions of regression coefficients in a linear term when 
+the prior of the coefficients is N(0,sigma^2_beta*I), where I is the identity matrix. 
+
+# Arguments:
+
+* `X::Array{Float64,2}`: incidence matrix.
+* `R2::Float64`: The proportion of variance that one expects, a priori, to be explained by this regression term.
+*  S0, df0:Float64:  The scale parameter for the scaled inverse-chi squared prior assigned to sigma^2_beta.
+                     In the parameterization of the scaled-inverse chi square in BGLR the expected values is S0/(df0-2). 
+                     The default value for the df parameter is 5. 
+"""
+
 #Function to setup RandReg
 #When the prior for the coefficients is N(0,\sigma^2_beta*I)
 
@@ -312,6 +326,15 @@ end
 #Begin FixEff
 ###################################################################################################################
 
+"""
+FixEff(X::Array{Float64})
+Function to assign a flat prior distribution to the regression coefficients in a linear term.
+
+# Arguments:
+
+* `X::Array{Float64,2}`: incidence matrix.
+"""
+
 function  FixEff(X::Array{Float64})
    n,p=size(X)
    return RandRegBRR("FIXED",n,p,X,zeros(1,p),zeros(p),zeros(n),-Inf,-Inf,-Inf,-Inf,0.0,false,0.0,0.0,0.0,zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
@@ -326,6 +349,24 @@ end
 ###################################################################################################################
 #Begin RKHS
 ###################################################################################################################
+"""
+RKHS(;K="null",EVD="null",R2=-Inf,df0= -Inf,S0=-Inf,minEigValue=1e-7)
+Function to assign a multivariate normal distribution with mean zero and 
+variance covariance matrix \sigma^2_u * K to a random term in a regression. 
+
+# Arguments:
+
+* `K::Array{Float64,2}`:A kernel matrix. 
+* `EVD::Eigen`: factorization object ``EVD`` which contains the eigenvalues in ``EVD[:values]``
+   and the eigenvectors in the columns of the matrix ``EVD[:vectors]``. The factorization can be
+   performed using the function ``eigfact``. If K is provided it is not necessary to provide EVD, on the
+   other hand if K is not provide, it is necessary to provide the factorization object.
+* `S0, df0::Float64`: The scale parameter for the scaled inverse-chi squared prior assigned to sigma^2_u. 
+                      In the parameterization of the scaled-inverse chi square in BGLR the expected values is S0/(df0-2). 
+                      The default value for the df parameter is 5.
+* `minEigValue::Float64`: threshold for keeping an eigen-vector. All those eigen-vectors, whose eigen-values are smaller that
+                          this thresold are removed from the eigen-vector matrix.
+"""
 
 function RKHS(;K="null",EVD="null",R2=-Inf,df0= -Inf,S0=-Inf,minEigValue=1e-7) 
  
@@ -385,6 +426,22 @@ end
 
 #Function to setup RandReg
 #when the prior for the coefficients is Double Exponential or Laplace
+
+"""
+BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf)
+Function to setup the prior distributions of regression coefficients in a linear term when 
+the prior of the coefficients is Laplace or double exponential. 
+
+# Arguments:
+
+* `X::Array{Float64,2}`: incidence matrix.
+* `R2::Float64`: the proportion of variance that one expects, a priori, to be explained by this regression term.
+* `lambda::Float64`: value of the regularization parameter.
+* `lambda_type::ASCIIString` specifying the prior distribution for lambda^2. The possible values are 
+                "gamma", "beta" and "FIXED".
+* `shape, rate::Float64`: shape and rate parameter for the Gamma distribution assigned to lambda^2.
+"""
+
 
 function BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf)
 	n,p=size(X)  #sample size and number of predictors
@@ -511,6 +568,26 @@ end
 
 #Function to setup RandReg
 #when the prior for the coefficients is distributed according to BayesA model
+
+"""
+BayesA(X::Array{Float64,2};R2=-Inf,df0=-Inf,S0=-Inf,shape0=-Inf,rate0=-Inf)
+Function to setup the prior distributions of regression coefficients in a linear term when 
+the prior for the coefficients is distributed according to BayesA model. See Mewissen et al. (2001). Prediction 
+of Total Genetic Value Using Genome-Wide Dense Marker Maps, Genetics 157: 1819-1829. We have modified
+the original formulation assigning a Gamma distribution to the scale parameter associated with the 
+variance of the markers. 
+
+# Arguments:
+
+* `X::Array{Float64,2}`: incidence matrix.
+* `R2::Float64`: the proportion of variance that one expects, a priori, to be explained by this regression term.
+* `S0, df0::Float64`: The scale parameter for the scaled inverse-chi squared prior assigned to the variance of the markers. 
+                      In the parameterization of the scaled-inverse chi square in BGLR the expected values is S0/(df0-2). 
+                      The default value for the df parameter is 5.
+* `shape, rate::Float64`: shape and rate parameter for the Gamma distribution assigned to the scale parameter 
+                          associated to the variance of markers.
+"""
+
 
 function BayesA(X::Array{Float64,2};R2=-Inf,df0=-Inf,S0=-Inf,shape0=-Inf,rate0=-Inf)
         n,p=size(X)  #sample size and number of predictors
@@ -643,6 +720,30 @@ end
 #Function to setup RandReg
 #when the prior of the coefficients is a mixture as defined in BayesB
 
+"""
+BayesB(X::Array{Float64,2}; R2=-Inf, df0=-Inf, S0=-Inf, shape0=-Inf, rate0=-Inf,probIn=0.5,counts=10)
+Function to setup the prior distributions of regression coefficients in a linear term when 
+the prior for the coefficients is distributed according to BayesB model. See Mewissen et al. (2001). Prediction 
+of Total Genetic Value Using Genome-Wide Dense Marker Maps, Genetics 157: 1819-1829. We have modified
+the original formulation assigning a Gamma distribution to the scale parameter associated with the 
+variance of the markers and also we have assigned a prior distribution to the probability of a variable 
+being in the model. The prior distribution assigned to the prrobability is a Beta, parametrized in terms of
+counts.
+
+# Arguments:
+
+* `X::Array{Float64,2}`: incidence matrix.
+* `R2::Float64`: the proportion of variance that one expects, a priori, to be explained by this regression term.
+* `S0, df0::Float64`: The scale parameter for the scaled inverse-chi squared prior assigned to the variance of the markers. 
+                      In the parameterization of the scaled-inverse chi square in BGLR the expected values is S0/(df0-2). 
+                      The default value for the df parameter is 5.
+* `shape0, rate0::Float64`: shape and rate parameter for the Gamma distribution assigned to the scale parameter 
+                            associated to the variance of markers.
+*  `probIn::Float64`: probability for a marker of being in the model.
+*  `counts::Int64::`: the number of prior counts.
+"""
+
+
 function BayesB(X::Array{Float64,2}; R2=-Inf, df0=-Inf, S0=-Inf, shape0=-Inf, rate0=-Inf,probIn=0.5,counts=10)
 	n,p=size(X) #Sample size and number of predictors
         return RandRegBayesB("BayesB",n,p,X,zeros(p),zeros(p),zeros(n),probIn,counts,0.0,0.0,zeros(Int64,p),R2,df0,S0,0.0,shape0,rate0,0.0,zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),0.0,0.0,"","",0,0)
@@ -751,6 +852,33 @@ function updateRandRegBayesB(fm::BGLRt,label::ASCIIString, updateMeans::Bool, sa
 
 end
 
+"""
+bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=string(pwd(),"/"),verbose=true,df0=1,S0=-Inf,naCode= -999, groups="null")
+The bglr (`Bayesian generalized linear regression') function fits various types of parametric and semi-parametric Bayesian regressions to
+continuous outcomes.
+
+# Arguments
+* `y::Array{Float64,1}`: the data-vector (NAs allowed).
+* `ETA::Dict()`: dictionary used to specify the regression function (or linear predictor). By default the linear predictor 
+                (the conditional expectation function in case of Gaussian outcomes) includes only an intercept. Regression 
+                on covariates and other types of random effects are specified in this dictionary.
+* `nIter::Int64`: the number of iterations.
+* `R2::Float64`: 0<R2<1. The proportion of variance that one expects, a priori, to be explained by the regression. Only
+                 used if the hyper-parameters are not specified; if that is the case, internaly, hyper-paramters are set 
+                 so that the prior modes are consistent with the variance partition specified by R2 and the prior distribution 
+                 is relatively flat at the mode.
+* `burnIn::Int64`: the burnIn.
+* `thin::Int64`: the thinning.
+* `saveAt::string`: this may include a path and a pre-fix that will be added to the name of the files that are saved as the program runs.
+* `verbose::Bool`: if true the iteration history is printed.
+* `S0, df0::Float64`: The scale parameter for the scaled inverse-chi squared prior assigned to the residual variance, 
+                      In the parameterization of the scaled-inverse chi square in BGLR the expected values is S0/(df0-2). 
+                      The default value for the df parameter is 5. If the scale is not specified a value is calculated so that the
+                      prior mode of the residual variance equals var(y)*R2.
+* `naCode::Int64`: The code for missing value, the default is -999.
+* `groups::Array{Float64,1}`: a vector of the same length of y that associates observations with groups, each group 
+                              will have an associated variance component for the error term.
+"""
 
 function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=string(pwd(),"/"),verbose=true,df0=1,S0=-Inf,naCode= -999, groups="null")
    #y=rand(10);ETA=Dict();nIter=-1;R2=.5;burnIn=500;thin=5;path="";verbose=true;df0=0;S0=0;saveAt=pwd()*"/"
