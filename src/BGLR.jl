@@ -1,5 +1,5 @@
 #Define the module BGLR
-#Last update Agust/4/2016
+#Last update Agust/19/2016
 
 module BGLR
 
@@ -412,6 +412,8 @@ type RandRegBL  #Bayesian LASSO
   shape::Float64
   rate::Float64
   shape2::Float64
+  probIn::Float64
+  counts::Int64
   max::Float64
   tau2::Array{Float64,1} #tau^2
   post_effects::Array{Float64,1}
@@ -427,6 +429,7 @@ type RandRegBL  #Bayesian LASSO
   nSums::Int64
   k::Float64	
 end
+
 
 #Function to setup RandReg
 #when the prior for the coefficients is Double Exponential or Laplace
@@ -447,10 +450,11 @@ the prior of the coefficients is Laplace or double exponential.
 """
 
 
-function BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf,shape2=-Inf,max=-Inf)
+function BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf,probIn=-Inf,counts=-999,max=-Inf)
 	n,p=size(X)  #sample size and number of predictors
-	return RandRegBL("BL",n,p,X,zeros(p),zeros(p),zeros(n),R2,lambda,lambda^2,lambda_type,shape,rate,shape2,max,zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),0.0,zeros(p),"","",0,0)
+	return RandRegBL("BL",n,p,X,zeros(p),zeros(p),zeros(n),R2,lambda,lambda^2,lambda_type,shape,rate,0.0,probIn,counts,max,zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),0.0,zeros(p),"","",0,0)
 end
+
 
 #Example
 #BL(X)
@@ -499,18 +503,21 @@ function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
 	end
 
 	if(LT.lambda_type=="beta")
-		if(LT.shape<0)
-			LT.shape=1.2
-			warn("shape1 parameter in LP was missing and was set to ",LT.shape,"\n")
+		if(LT.probIn<0)
+			LT.probIn=0.5
+			warn("probIn was missing and was set to ",LT.probIn,"\n")
 		end
 		
-		if(LT.shape2<0)
-			LT.shape2=1.2
-			warn("shape2 parameter in LP was missing and was set to ",LT.shape2,"\n")
+		if(LT.counts<0)
+			LT.counts=2
+			warn("counts parameter in LP was missing and was set to ",LT.counts,"\n")
 		end
+		
+		LT.shape=LT.probIn*LT.counts;
+		LT.shape2=(1-LT.probIn)*LT.counts;
 
 		if(LT.max<0)
-			LT.max=200.0
+			LT.max=10*LT.lambda
 			warn("max parameter in LP was missing and was set to ", LT.max,"\n")
 		end
 	end
@@ -562,7 +569,6 @@ type RandRegBayesA # BayesA
   eta::Array{Float64,1} # X*b
   R2::Float64
   df0::Float64 #prior degree of freedom
-  S0::Float64  #prior scale
   df::Float64  #degrees of freedom of the conditional distribution
   shape0::Float64 #shape parameter for the gamma prior assigned to Scale
   rate0::Float64  #rate parameter for the gamma prior assigned to Scale
@@ -587,7 +593,7 @@ end
 #when the prior for the coefficients is distributed according to BayesA model
 
 """
-BayesA(X::Array{Float64,2};R2=-Inf,df0=-Inf,S0=-Inf,shape0=-Inf,rate0=-Inf)
+BayesA(X::Array{Float64,2};R2=-Inf,df0=-Inf,shape0=-Inf,rate0=-Inf)
 Function to setup the prior distributions of regression coefficients in a linear term when 
 the prior for the coefficients is distributed according to BayesA model. See Mewissen et al. (2001). Prediction 
 of Total Genetic Value Using Genome-Wide Dense Marker Maps, Genetics 157: 1819-1829. We have modified
@@ -598,17 +604,17 @@ variance of the markers.
 
 * `X::Array{Float64,2}`: incidence matrix.
 * `R2::Float64`: the proportion of variance that one expects, a priori, to be explained by this regression term.
-* `S0, df0::Float64`: The scale parameter for the scaled inverse-chi squared prior assigned to the variance of the markers. 
-                      In the parameterization of the scaled-inverse chi square in BGLR the expected values is S0/(df0-2). 
-                      The default value for the df parameter is 5.
-* `shape, rate::Float64`: shape and rate parameter for the Gamma distribution assigned to the scale parameter 
+* `df0::Float64`: The degrees of freedom for the scaled inverse-chi squared prior assigned to the variance of the markers. 
+                  In the parameterization of the scaled-inverse chi square in BGLR the expected values is S0/(df0-2). 
+                  The default value for the df parameter is 5.
+* `shape0, rate0::Float64`: shape and rate parameter for the Gamma distribution assigned to the scale parameter 
                           associated to the variance of markers.
 """
 
 
-function BayesA(X::Array{Float64,2};R2=-Inf,df0=-Inf,S0=-Inf,shape0=-Inf,rate0=-Inf)
+function BayesA(X::Array{Float64,2};R2=-Inf,df0=-Inf,shape0=-Inf,rate0=-Inf)
         n,p=size(X)  #sample size and number of predictors
-        return RandRegBayesA("BayesA",n,p,X,zeros(p),zeros(p),zeros(n),R2,df0,S0,0.0,shape0,rate0,0.0,zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
+        return RandRegBayesA("BayesA",n,p,X,zeros(p),zeros(p),zeros(n),R2,df0,0.0,shape0,rate0,-Inf,zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),"","",0,0)
 end
 
 #Example
@@ -642,9 +648,8 @@ function BayesA_post_init(LT::RandRegBayesA, Vy::Float64, nLT::Int64, R2::Float6
         end
 
 	#Default scale parameter for the prior assigned to the variance of markers
-	if(LT.S0<0)
-		LT.S0=Vy*LT.R2/MSx*(LT.df0+2)
-		warn("Scale in LP was missing and was set to ", LT.S0,"\n")
+	if(LT.S<0)
+		LT.S=Vy*LT.R2/MSx*(LT.df0+2)
 	end
 
 	#Improvement: Treat Scale as random, assign a gamma density
@@ -653,14 +658,11 @@ function BayesA_post_init(LT::RandRegBayesA, Vy::Float64, nLT::Int64, R2::Float6
 	end
 	
 	if(LT.rate0<0)
-		LT.rate0=(LT.shape0-1)/LT.S0
+		LT.rate0=(LT.shape0-1)/LT.S
 	end
 
-        #Initial value for S
-	LT.S=LT.S0
-
 	#Initial value for variances of regression coefficients
-	LT.var=rep(LT.S0/(LT.df0+2),each=LT.p)
+	LT.var=rep(LT.S/(LT.df0+2),each=LT.p)
 end
 
 function updateRandRegBayesA(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
@@ -710,7 +712,6 @@ type RandRegBayesB #BayesB
   d::Array{Int64,1}
   R2::Float64
   df0::Float64 #prior degree of freedom
-  S0::Float64  #prior scale
   df::Float64  #degrees of freedom of the conditional distribution
   shape0::Float64 #shape parameter for the gamma prior assigned to Scale
   rate0::Float64  #rate paramter for the gamma prior assigned to Scale
@@ -738,7 +739,7 @@ end
 #when the prior of the coefficients is a mixture as defined in BayesB
 
 """
-BayesB(X::Array{Float64,2}; R2=-Inf, df0=-Inf, S0=-Inf, shape0=-Inf, rate0=-Inf,probIn=0.5,counts=10)
+BayesB(X::Array{Float64,2}; R2=-Inf, df0=-Inf, shape0=-Inf, rate0=-Inf,probIn=-Inf,counts=-999)
 Function to setup the prior distributions of regression coefficients in a linear term when 
 the prior for the coefficients is distributed according to BayesB model. See Mewissen et al. (2001). Prediction 
 of Total Genetic Value Using Genome-Wide Dense Marker Maps, Genetics 157: 1819-1829. We have modified
@@ -751,9 +752,9 @@ counts.
 
 * `X::Array{Float64,2}`: incidence matrix.
 * `R2::Float64`: the proportion of variance that one expects, a priori, to be explained by this regression term.
-* `S0, df0::Float64`: The scale parameter for the scaled inverse-chi squared prior assigned to the variance of the markers. 
-                      In the parameterization of the scaled-inverse chi square in BGLR the expected values is S0/(df0-2). 
-                      The default value for the df parameter is 5.
+* `df0::Float64`: The degrees of freedom for the scaled inverse-chi squared prior assigned to the variance of the markers. 
+                  In the parameterization of the scaled-inverse chi square in BGLR the expected values is S0/(df0-2). 
+                  The default value for the df parameter is 5.
 * `shape0, rate0::Float64`: shape and rate parameter for the Gamma distribution assigned to the scale parameter 
                             associated to the variance of markers.
 *  `probIn::Float64`: probability for a marker of being in the model.
@@ -761,9 +762,9 @@ counts.
 """
 
 
-function BayesB(X::Array{Float64,2}; R2=-Inf, df0=-Inf, S0=-Inf, shape0=-Inf, rate0=-Inf,probIn=0.5,counts=10)
+function BayesB(X::Array{Float64,2}; R2=-Inf, df0=-Inf, shape0=-Inf, rate0=-Inf,probIn=-Inf,counts=-999)
 	n,p=size(X) #Sample size and number of predictors
-        return RandRegBayesB("BayesB",n,p,X,zeros(p),zeros(p),zeros(n),probIn,counts,0.0,0.0,zeros(Int64,p),R2,df0,S0,0.0,shape0,rate0,0.0,zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),0.0,0.0,"","",0,0)
+        return RandRegBayesB("BayesB",n,p,X,zeros(p),zeros(p),zeros(n),probIn,counts,0.0,0.0,zeros(Int64,p),R2,df0,0.0,shape0,rate0,-Inf,zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),0.0,0.0,"","",0,0)
 end
 
 #Example
@@ -814,9 +815,9 @@ function BayesB_post_init(LT::RandRegBayesB, Vy::Float64, nLT::Int64, R2::Float6
 	
 	#Default value for the scale parameter associated with the distribution assigned to the variance of 
 	#marker effects
-	if(LT.S0<0)
-		LT.S0=Vy*LT.R2/MSx*(LT.df0+2)/LT.probIn
-		warn("Scale parameter in LP was missing and was set to ",LT.S0,"\n")
+	if(LT.S<0)
+		LT.S=Vy*LT.R2/MSx*(LT.df0+2)/LT.probIn
+		warn("Scale parameter in LP was set to ",LT.S,"\n")
 	end
 
 	if(LT.shape0<0)
@@ -824,14 +825,11 @@ function BayesB_post_init(LT::RandRegBayesB, Vy::Float64, nLT::Int64, R2::Float6
 	end
 
 	if(LT.rate0<0)
-		LT.rate0=(LT.shape0-1)/LT.S0
+		LT.rate0=(LT.shape0-1)/LT.S
 	end
 
-	#Initial value for S
-	LT.S=LT.S0
-
 	#Initial value for variances of regression coefficients
-        LT.var=rep(LT.S0/(LT.df0+2),each=LT.p)
+        LT.var=rep(LT.S/(LT.df0+2),each=LT.p)
 
 	#Initial value for d
         d=rand(Bernoulli(LT.probIn),LT.p)
