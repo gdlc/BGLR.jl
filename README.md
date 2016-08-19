@@ -22,21 +22,21 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   Pkg.clone("https://github.com/gdlc/BGLR.jl")
 ```
 
-#### Examples
+#### Data sets
 
-The examples presented below use either the mice or wheat data sets provided with BGLR. To get these data in the computing environment you can use the following code.
+The examples presented below use either the wheat data sets provided with BGLR-R package. To get these data in the computing environment you can use the following code.
 
-
-```Julia
-# Wheat data sets
+**Wheat data set**
+```julia
  # Pedigree-relationship matrix
   A=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.A.csv");header=true)[1];
  # Markers
   X=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.X.csv");header=true)[1];
  #Phenotypes
   Y=readcsv(joinpath(Pkg.dir(),"BGLR/data/wheat.Y.csv");header=true)[1];
-  
 ```
+
+#### Examples
   * [Genomic BLUP](#GBLUP)
   * [Bayesian Ridge Regression](#BRR)
   * [Bayesian LASSO](#BL)
@@ -55,6 +55,10 @@ The examples presented below use either the mice or wheat data sets provided wit
 
 ### Genomic BLUP
 <div id="GBLUP" />
+
+The example below fits the so-called G-BLUP model. 
+
+
 ```julia
  using BGLR
  
