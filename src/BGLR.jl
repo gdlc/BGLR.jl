@@ -1128,10 +1128,8 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 				end
 
 				if(fm.ETA[term[1]].lambda_type=="beta")
-					warn("There is a problem with this sampler, FIXME!!!\n")
-					tmp=metropLambda(fm.ETA[term[1]].tau2, fm.ETA[term[1]].lambda, fm.ETA[term[1]].shape, fm.ETA[term[1]].shape2, fm.ETA[term[1]].max)
-					fm.ETA[term[1]].lambda=tmp
-					fm.ETA[term[1]].lambda2=tmp^2
+					fm.ETA[term[1]].lambda=metropLambda(fm.ETA[term[1]].tau2, fm.ETA[term[1]].lambda, fm.ETA[term[1]].shape, fm.ETA[term[1]].shape2, fm.ETA[term[1]].max)
+					fm.ETA[term[1]].lambda2=fm.ETA[term[1]].lambda^2
 					println("lambda=",round(fm.ETA[term[1]].lambda,2))
 				end
 				

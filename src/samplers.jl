@@ -219,15 +219,16 @@ end
 
 #Metropolis sampler for lambda in the Bayesian LASSO
 function metropLambda(tau2::Array{Float64,1}, lambda::Float64, shape1::Float64, shape2::Float64, max::Float64)
+
 	lambda2=lambda^2
 	rate=sum(tau2)/2
         shape=length(tau2)
 	l2_new=rand(Gamma(shape,1.0/rate))
 	l_new=sqrt(l2_new)
 
-	logP_old=sum(logpdf(Exponential(2.0/lambda2),tau2))+logpdf(Beta(shape1,shape2),lambda/max)-logpdf(Gamma(shape,1.0/rate),2.0/lambda2)
+	logP_old=sum(logpdf(Exponential(2.0/lambda2),tau2))+logpdf(Beta(shape1,shape2),lambda/max)-logpdf(Gamma(rate,1/shape),2.0/lambda2)
 
-	logP_new=sum(logpdf(Exponential(2.0/l2_new),tau2))+logpdf(Beta(shape1,shape2),l_new/max)-logpdf(Gamma(shape,1.0/rate),2.0/l2_new)
+	logP_new=sum(logpdf(Exponential(2.0/l2_new),tau2))+logpdf(Beta(shape1,shape2),l_new/max)-logpdf(Gamma(rate,1.0/shape),2.0/l2_new)
 
         return (logP_new-logP_old)>log(rand(Uniform())) ? l_new:lambda
 end
