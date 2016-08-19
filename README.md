@@ -1,6 +1,6 @@
 ## BGLR for the Julia Language
 
-This Julia package implements **Bayesian shrinkage and variable selection methods for high-dimensional regressions**.
+The BGLR Julia package implements **Bayesian shrinkage and variable selection methods for high-dimensional regressions**.
 
 The design is inspired on the BGLR R-package (BGLR-R). Over time we aim to implement a similar set of methods than the ones implelented in the R version. The R version is highly optimized with use of compiled C code; this gives BGLR-R a computational speed much higher than the one that can be obtained using R code only. 
 
@@ -21,7 +21,9 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
   Pkg.rm("BGLR")
   Pkg.clone("https://github.com/gdlc/BGLR.jl")
 ```
+#### Datasets
 
+The following examples use the wheat and mice data sets provided with the BGLR-R package. 
 #### Examples
   * [Genomic BLUP](#GBLUP)
   * [Bayesian Ridge Regression](#BRR)
