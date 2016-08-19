@@ -22,6 +22,8 @@ import
 	Distributions.Bernoulli,
 	Distributions.Uniform,
 	Distributions.Beta,
+	Distributions.Exponential,
+	Distributions.logpdf,
 	Base.LinAlg.BLAS.axpy!,
 	ArrayViews.unsafe_view,
 	Base.LinAlg.scale 
@@ -409,6 +411,8 @@ type RandRegBL  #Bayesian LASSO
   lambda_type::ASCIIString #Possible values are "gamma", "beta", "FIXED"
   shape::Float64
   rate::Float64
+  shape2::Float64
+  max::Float64
   tau2::Array{Float64,1} #tau^2
   post_effects::Array{Float64,1}
   post_effects2::Array{Float64,1}
@@ -443,9 +447,9 @@ the prior of the coefficients is Laplace or double exponential.
 """
 
 
-function BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf)
+function BL(X::Array{Float64,2};R2=-Inf, lambda=-Inf,lambda_type="gamma", shape=-Inf, rate=-Inf,shape2=-Inf,max=-Inf)
 	n,p=size(X)  #sample size and number of predictors
-	return RandRegBL("BL",n,p,X,zeros(p),zeros(p),zeros(n),R2,lambda,lambda^2,lambda_type,shape,rate,zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),0.0,zeros(p),"","",0,0)
+	return RandRegBL("BL",n,p,X,zeros(p),zeros(p),zeros(n),R2,lambda,lambda^2,lambda_type,shape,rate,shape2,max,zeros(p),zeros(p),zeros(p),zeros(p),zeros(n),zeros(n),zeros(n),0.0,zeros(p),"","",0,0)
 end
 
 #Example
@@ -495,7 +499,20 @@ function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
 	end
 
 	if(LT.lambda_type=="beta")
-		#Add your magic code here
+		if(LT.shape<0)
+			LT.shape=1.2
+			warn("shape1 parameter in LP was missing and was set to ",LT.shape,"\n")
+		end
+		
+		if(LT.shape2<0)
+			LT.shape2=1.2
+			warn("shape2 parameter in LP was missing and was set to ",LT.shape2,"\n")
+		end
+
+		if(LT.max<0)
+			LT.max=200.0
+			warn("max parameter in LP was missing and was set to ", LT.max,"\n")
+		end
 	end
 
 	#Initial values for tau^2
@@ -1108,6 +1125,14 @@ function bglr(;y="null",ETA=Dict(),nIter=1500,R2=.5,burnIn=500,thin=5,saveAt=str
 				  	fm.ETA[term[1]].lambda2=rand(Gamma(shape,1/rate))
 				  	fm.ETA[term[1]].lambda=sqrt(fm.ETA[term[1]].lambda2)
 				  	println("lambda=",round(fm.ETA[term[1]].lambda,2))
+				end
+
+				if(fm.ETA[term[1]].lambda_type=="beta")
+					warn("There is a problem with this sampler, FIXME!!!\n")
+					tmp=metropLambda(fm.ETA[term[1]].tau2, fm.ETA[term[1]].lambda, fm.ETA[term[1]].shape, fm.ETA[term[1]].shape2, fm.ETA[term[1]].max)
+					fm.ETA[term[1]].lambda=tmp
+					fm.ETA[term[1]].lambda2=tmp^2
+					println("lambda=",round(fm.ETA[term[1]].lambda,2))
 				end
 				
 				deltaSS=deltaSS+sum(((fm.ETA[term[1]].effects)./sqrt(fm.ETA[term[1]].tau2)).^2)
