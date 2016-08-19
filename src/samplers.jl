@@ -65,7 +65,7 @@ function sample_beta(n::Int64, p::Int64, X::Array{Float64,2},x2::Array{Float64,1
         for j in 1:p
                 bj=b[j]
 		xj=unsafe_view(X, :, j)
-                #rhs=dot(xj,error)/varE
+	        #rhs=dot(xj,error)/varE
 		#rhs+=x2[j]*bj/varE
 		rhs=(innersimd(xj,error,n)+x2[j]*bj)/varE
                 c=x2[j]/varE + 1.0/varBj[j]
