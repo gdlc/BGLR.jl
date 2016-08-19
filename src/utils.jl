@@ -71,9 +71,26 @@ Recode snp to 0,1,2 Format using allele "1" as reference
 
 =#
 
+
 #FIXME:
 #This is a preeliminary version, it is not memory efficient
 #check also coding for missing values
+
+"""
+read_bed(bed_file::UTF8String,n::Int64,p::Int64)
+Function that reads genotype information stored in binary BED files used in plink. 
+
+# Arguments:
+
+* `bed_file::UTF8String`: path to BED file.
+* `n::Int64`: Number of individuals.
+* `p::Int64`: Number of SNPs.
+
+# Returns:
+
+* A matrix with the genotypic information.
+
+"""
 
 function read_bed(bed_file::UTF8String,n::Int64,p::Int64)
 
@@ -126,6 +143,21 @@ end
 #if intercept=true, use p-1 dummy variables
 #if intercept=false, use p dummy variables
 #where p is the number of levels
+
+"""
+model_matrix(x;intercept=true)
+Function that creates a design (or model) matrix, by expanding factors to a set of dummary variables.
+
+# Arguments:
+* `x`: a vector that contains the information for the levels.
+* `intecept::Bool`: if true, the routine generates the matrix using p-1 dummy variables. If false then the 
+                  routine generates the matrix using p dummy variables.
+
+#Returns:
+
+* The design matrix.
+
+"""
 
 function model_matrix(x;intercept=true)
         levels=sort(unique(x))
@@ -200,6 +232,24 @@ function renumber(x)
      return z
 end
 ##########################################################################################
+
+"""
+rep(x;each=0,times=0)
+replicates the values in x.
+
+# Arguments:
+
+* `x`: a vector.
+* `each::Int64`: An integer. Each element of x is repeated each times.
+* `times::Int64`:An integer giving the number of times to repeat each element if of length(x) 
+                 or to repeat the whole vector if of length 1.
+
+# Returns:
+
+* An object of the same type as x.
+
+"""
+
 function rep(x;each=0,times=0)
 
         tmp=((each>0)&(times<=0))|((each<=0)&(times>0))
