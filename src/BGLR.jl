@@ -53,7 +53,7 @@ function welcome()
 end
 ##################################################################################################
 
-streamOrASCIIString=Union{ASCIIString,IOStream}
+streamOrString=Union{String,IOStream}
 
 ###################################################################################################################
 #Begin BGLRt
@@ -79,7 +79,7 @@ type BGLRt
   thin::Int64
   R2::Float64
   verbose::Bool
-  path::ASCIIString
+  path::String
   n::Int64
   varE::Array{Float64,1}  #It is an array because we can have different variances by group
   df0::Float64
@@ -106,13 +106,13 @@ end
 
 ## Linear Term: INTercept
 type INT
-  name::ASCIIString
+  name::String
   mu::Float64
   post_mu::Float64
   post_mu2::Float64
   post_SD_mu::Float64
-  fname::ASCIIString
-  con::streamOrASCIIString
+  fname::String
+  con::streamOrString
   nSums::Int64
   k::Float64
 end
@@ -124,7 +124,7 @@ end
 # Example: tmp=INT(rand(10))
 
 #Update Intercept
-function updateInt(fm::BGLRt,label::ASCIIString,updateMeans::Bool,saveSamples::Bool,nSums::Int,k::Float64, hasGroups::Bool, groups::Array{Int64,1})
+function updateInt(fm::BGLRt,label::String,updateMeans::Bool,saveSamples::Bool,nSums::Int,k::Float64, hasGroups::Bool, groups::Array{Int64,1})
     
 	fm.error+=fm.ETA[label].mu
 
@@ -164,7 +164,7 @@ end
 
 ## Linear Term: BRR
 type RandRegBRR # Bayesian Ridge Regression
-  name::ASCIIString
+  name::String
   n::Int64 # number or individuals
   p::Int64 # number of vectors
   X::Array{Float64,2} # incidence matrix
@@ -186,8 +186,8 @@ type RandRegBRR # Bayesian Ridge Regression
   post_eta::Array{Float64,1} #1 posterior mean of linear term
   post_eta2::Array{Float64,1} # posterior mean of the linear term squared
   post_SD_eta::Array{Float64,1} # posterior SD of the linear term
-  fname::ASCIIString
-  con::streamOrASCIIString # a connection where samples will be saved
+  fname::String
+  con::streamOrString # a connection where samples will be saved
   nSums::Int64
   k::Float64
 end
@@ -255,7 +255,7 @@ end
 
 
 #Update RandRegBRR
-function updateRandRegBRR(fm::BGLRt, label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
+function updateRandRegBRR(fm::BGLRt, label::String, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
 	
 	p=fm.ETA[label].p
 	n=fm.ETA[label].n
@@ -398,7 +398,7 @@ end
 #de los Campos et al (2009)
 
 type RandRegBL  #Bayesian LASSO
-  name::ASCIIString
+  name::String
   n::Int64 #Number of individuals
   p::Int64 #Number of covariates
   X::Array{Float64,2} #Incidence matrix
@@ -408,7 +408,7 @@ type RandRegBL  #Bayesian LASSO
   R2::Float64
   lambda::Float64
   lambda2::Float64
-  lambda_type::ASCIIString #Possible values are "gamma", "beta", "FIXED"
+  lambda_type::String #Possible values are "gamma", "beta", "FIXED"
   shape::Float64
   rate::Float64
   shape2::Float64
@@ -424,8 +424,8 @@ type RandRegBL  #Bayesian LASSO
   post_SD_eta::Array{Float64,1} #posterior SD of the linear term
   post_lambda::Float64
   post_tau2::Array{Float64,1} 
-  fname::ASCIIString
-  con::streamOrASCIIString #a connection where samples will be saved
+  fname::String
+  con::streamOrString #a connection where samples will be saved
   nSums::Int64
   k::Float64	
 end
@@ -444,7 +444,7 @@ the prior of the coefficients is Laplace or double exponential.
 * `X::Array{Float64,2}`: incidence matrix.
 * `R2::Float64`: the proportion of variance that one expects, a priori, to be explained by this regression term.
 * `lambda::Float64`: value of the regularization parameter.
-* `lambda_type::ASCIIString` specifying the prior distribution for lambda^2. The possible values are 
+* `lambda_type::String` specifying the prior distribution for lambda^2. The possible values are 
                 "gamma", "beta" and "FIXED".
 * `shape, rate::Float64`: shape and rate parameter for the Gamma distribution assigned to lambda^2.
 """
@@ -526,7 +526,7 @@ function BL_post_init(LT::RandRegBL, Vy::Float64, nLT::Int64, R2::Float64)
         LT.tau2=rep((Vy*R2/nLT)/MSx,each=LT.p)
 end
 
-function updateRandRegBL(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
+function updateRandRegBL(fm::BGLRt,label::String, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
 	p=fm.ETA[label].p
 	n=fm.ETA[label].n
 
@@ -560,7 +560,7 @@ end
 
 ## Linear Term: BayesA
 type RandRegBayesA # BayesA
-  name::ASCIIString
+  name::String
   n::Int64 # number or individuals
   p::Int64 # number of vectors
   X::Array{Float64,2} # incidence matrix
@@ -583,8 +583,8 @@ type RandRegBayesA # BayesA
   post_eta::Array{Float64,1} #1 posterior mean of linear term
   post_eta2::Array{Float64,1} # posterior mean of the linear term squared
   post_SD_eta::Array{Float64,1} # posterior SD of the linear term
-  fname::ASCIIString
-  con::streamOrASCIIString # a connection where samples will be saved
+  fname::String
+  con::streamOrString # a connection where samples will be saved
   nSums::Int64
   k::Float64
 end
@@ -665,7 +665,7 @@ function BayesA_post_init(LT::RandRegBayesA, Vy::Float64, nLT::Int64, R2::Float6
 	LT.var=rep(LT.S/(LT.df0+2),each=LT.p)
 end
 
-function updateRandRegBayesA(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
+function updateRandRegBayesA(fm::BGLRt,label::String, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
         p=fm.ETA[label].p
         n=fm.ETA[label].n
 
@@ -698,7 +698,7 @@ end
 
 ##Linear Term: BayesB
 type RandRegBayesB #BayesB
-  name::ASCIIString
+  name::String
   n::Int64  #Number of individuals
   p::Int64  #Number of markers 
   X::Array{Float64,2} #incidence matrix
@@ -728,8 +728,8 @@ type RandRegBayesB #BayesB
   post_SD_eta::Array{Float64,1} #posterior SD of the linear term
   post_probIn::Float64
   post_probIn2::Float64 
-  fname::ASCIIString
-  con::streamOrASCIIString #connection where the samples will be saved
+  fname::String
+  con::streamOrString #connection where the samples will be saved
   nSums::Int64
   k::Float64
 end
@@ -836,7 +836,7 @@ function BayesB_post_init(LT::RandRegBayesB, Vy::Float64, nLT::Int64, R2::Float6
 	
 end
 
-function updateRandRegBayesB(fm::BGLRt,label::ASCIIString, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
+function updateRandRegBayesB(fm::BGLRt,label::String, updateMeans::Bool, saveSamples::Bool, nSums::Int, k::Float64)
         p=fm.ETA[label].p
         n=fm.ETA[label].n
 
