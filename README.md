@@ -371,6 +371,7 @@ using BGLR
 
 ### Reproducing Kernel Hilbert Spaces Regression with single Kernel methods
 <div id="RKHS" />
+
 ```julia
 #Reproducing Kernel Hilbert Spaces
 #Single kernel methods
