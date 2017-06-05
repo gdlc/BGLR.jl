@@ -168,6 +168,7 @@ The example below fits the so-called G-BLUP model.
 
 ### Parametric Shrinkage and Variable Selection
 <div id="BRR-BA-BB" />
+
 ```julia
 
 ##########################################################################################
