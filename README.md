@@ -147,6 +147,7 @@ The example below fits the so-called G-BLUP model.
 
 ### BayesB
 <div id="BayesB" />
+
 ```julia
 #BayesB
   using BGLR
