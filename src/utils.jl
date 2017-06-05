@@ -28,8 +28,7 @@
  $xxd -b sample.bed
  
  0000000: 01101100 00011011 00000001 11111010 11111111 01010111  l....W
-
-
+ ...
 For the genotype data, each byte encodes up to four genotypes (2 bits per genoytpe). The coding is
      00  Homozygote "1"/"1"
      01  Heterozygote
