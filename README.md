@@ -418,6 +418,7 @@ using Gadfly
 
 ### Reproducing Kernel Hilbert Spaces Regression with Kernel Averaging
 <div id="RKHS-KA">
+
 ```julia
 #Reproducing Kernel Hilbert Spaces
 #Multi kernel methods (Kernel Averaging)
@@ -474,6 +475,7 @@ using Gadfly
 
 ### Prediction in testing data sets using a single training-testing partition
 <div id="Trn-Tst1">
+
 ```julia
 
 #Assesment of prediction accuracy using a single training-testing partition
@@ -633,6 +635,7 @@ using Gadfly
 
 ### Modeling genetic by environment interactions
 <div id="GxE"/>
+
 ```julia
 
 #Genotype x Environment interaction
