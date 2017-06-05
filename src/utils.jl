@@ -77,12 +77,12 @@ Recode snp to 0,1,2 Format using allele "1" as reference
 #check also coding for missing values
 
 """
-read_bed(bed_file::UTF8String,n::Int64,p::Int64)
+read_bed(bed_file::String,n::Int64,p::Int64)
 Function that reads genotype information stored in binary BED files used in plink. 
 
 # Arguments:
 
-* `bed_file::UTF8String`: path to BED file.
+* `bed_file::String`: path to BED file.
 * `n::Int64`: Number of individuals.
 * `p::Int64`: Number of SNPs.
 
@@ -92,7 +92,7 @@ Function that reads genotype information stored in binary BED files used in plin
 
 """
 
-function read_bed(bed_file::UTF8String,n::Int64,p::Int64)
+function read_bed(bed_file::String,n::Int64,p::Int64)
 
 	s = open(bed_file)
 	read(s,UInt8) == 0x6c && read(s,UInt8) == 0x1b || error("Unknown file format")
