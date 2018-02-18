@@ -4,7 +4,7 @@ The BGLR Julia package implements **Bayesian shrinkage and variable selection me
 
 The design is inspired on the BGLR R-package (BGLR-R). Over time we aim to implement a similar set of methods than the ones implelented in the R version. The R version is highly optimized with use of compiled C code; this gives BGLR-R a computational speed much higher than the one that can be obtained using R code only. 
 
-By developing BGLR for Julia (BGLR-Julia) wee seek to: (i) reach the comunity of Julia users, (ii) achieve a similar or better performance than the one achieved with BGLR-R (this is challenging because BGLR-R is highly optimized and makes intensive use of C and BLAS routines), (iii) enable users to use BGLR with memory-mapped arrays as well as RAM arrays, (iv) capitalize on some of multi-core computing capabilities offered by Julia.
+By developing BGLR for Julia (BGLR-Julia) we seek to: (i) reach the community of Julia users, (ii) achieve a similar or better performance than the one achieved with BGLR-R (this is challenging because BGLR-R is highly optimized and makes intensive use of C and BLAS routines), (iii) enable users to use BGLR with memory-mapped arrays as well as RAM arrays, (iv) capitalize on some of multi-core computing capabilities offered by Julia.
 
 Funding of BGLR-R and BGLR-Julia was provided by NIH (R01 GM101219).
 
@@ -24,7 +24,7 @@ Authors:  Gustavo de los Campos (gustavoc@msu.edu) and Paulino Perez-Rodriguez (
 
 #### Data sets
 
-The examples presented below use either the wheat data sets provided with BGLR-R package. To get these data in the computing environment you can use the following code.
+The examples presented below use either of the wheat data sets provided with BGLR-R package. To get these data in the computing environment you can use the following code.
 
 **Wheat data set**
 ```julia
